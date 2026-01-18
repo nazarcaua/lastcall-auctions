@@ -1,6 +1,14 @@
-﻿namespace LastCallMotorAuctions.API.Data
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace LastCallMotorAuctions.API.Data;
+
+public class ApplicationDbContext : DbContext
 {
-    public class ApplicationDbContext
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
     {
+
     }
+
+    // DB setters/getters here for models
 }
