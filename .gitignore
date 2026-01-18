@@ -1,0 +1,51 @@
+## .NET build outputs
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.dll
+*.exe
+*.pdb
+*.cache
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Visual Studio files
+.vs/
+*.vsidx
+*.vspscc
+*.vsp
+*.vssscc
+.vscode/
+
+## Rider
+.idea/
+*.sln.iml
+
+## Environment variables
+.env
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+
+## NuGet packages
+*.nupkg
+packages/
+.nuget/
+
+## Logs
+logs/
+*.log
+
+## SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+## OS files
+.DS_Store
+Thumbs.db
