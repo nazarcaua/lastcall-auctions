@@ -53,14 +53,14 @@ Initial setup - Backend template created
 - [ ] Create API controllers for core entities (Users, Vehicles, Auctions, Bids)
 - [ ] Add input validation
 - [ ] Create DTOs (Data Transfer Objects) for API requests/responses
-- [ ] Set up API versioning and Swagger/OpenAPI documentation
+- [/] Set up API versioning and Swagger/OpenAPI documentation
 
 ### Security & Configuration
 - [ ] Configure CORS policy for frontend integration
 - [ ] Add appsettings.Development.json with development connection string
-- [ ] Set up dependency injection for services and repositories
+- [/] Set up dependency injection for services and repositories
 
 ### Quality & Operations
 - [ ] Implement global error handling middleware and exception handling
-- [ ] Implement logging configuration (Serilog or built-in logging)
+- [/] Implement logging configuration (Serilog or built-in logging)
 - [ ] Add health check endpoints for monitoring
