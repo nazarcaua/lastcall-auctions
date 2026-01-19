@@ -1,4 +1,4 @@
-﻿namespace LastCallMotorAuctions.API.Services
+namespace LastCallMotorAuctions.API.Services
 {
     public interface IService
     {
