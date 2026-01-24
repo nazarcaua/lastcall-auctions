@@ -6,6 +6,7 @@ using System.Text;
 using LastCallMotorAuctions.API.Middleware;
 using LastCallMotorAuctions.API.Hubs;
 using LastCallMotorAuctions.API.Services;
+using System.Data.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +81,15 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IAuctionService, AuctionService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 
+// Health Checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is healthy"))
+    .AddSqlServer(
+        connectionString: builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
+        name: "database",
+        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+        tags: new[] {"db", "sql", "sqlserver"});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -107,5 +117,16 @@ app.MapControllers();
 
 // Map SignalR hub
 app.MapHub<BiddingHub>("/hubs/bidding");
+
+// Health Check endpoints
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => !check.Tags.Contains("ready")
+});
 
 app.Run();
