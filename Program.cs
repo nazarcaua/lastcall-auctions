@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using LastCallMotorAuctions.API.Middleware;
 using LastCallMotorAuctions.API.Hubs;
+using LastCallMotorAuctions.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +72,12 @@ builder.Services.AddAuthorization(options =>
 
 // SignalR Configuration
 builder.Services.AddSignalR();
+
+// Register Services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IAuctionService, AuctionService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var app = builder.Build();
 
