@@ -1,5 +1,8 @@
 using LastCallMotorAuctions.API.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using LastCallMotorAuctions.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +32,42 @@ builder.Services.AddCors(options =>
     }); 
 });
 
+// JWT Authentication Configuration
+var jwtKey = builder.Configuration["JWT:Key"] ?? throw new InvalidOperationException("JWT Key is not configured");
+var jwtIssuer = builder.Configuration["JWT:Issuer"] ?? "LastCallMotorAuctions";
+var jwtAudience = builder.Configuration["JWT:Audience"] ?? "LastCallMotorAuctions";
+var jwtExpiryMinutes = builder.Configuration.GetValue<int>("JWT:ExpiryMinutes", 60);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+// Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("BuyerOnly", policy => policy.RequireRole("Buyer"));
+    options.AddPolicy("SellerOnly", policy => policy.RequireRole("Seller"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("BuyerOrSeller", policy => policy.RequireRole("Buyer", "Seller"));
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -44,6 +83,10 @@ app.UseMiddleware<ErrorHandlingMiddleware>();
 
 // Cors middleware
 app.UseCors("AllowFrontend");
+
+// Authentication and Authorization Middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
