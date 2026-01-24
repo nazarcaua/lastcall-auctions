@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using LastCallMotorAuctions.API.Middleware;
+using LastCallMotorAuctions.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,6 +69,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("BuyerOrSeller", policy => policy.RequireRole("Buyer", "Seller"));
 });
 
+// SignalR Configuration
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -89,5 +93,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<BiddingHub>("/hubs/bidding");
 
 app.Run();
