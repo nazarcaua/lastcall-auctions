@@ -16,6 +16,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add services to the container.
 builder.Services.AddControllers();
 
+// OpenAPI/Swagger Configuration with JWT
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -85,6 +86,9 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    app.MapGet("/", () => Results.Redirect("/openapi/v1.json"))
+    .ExcludeFromDescription();
 }
 
 app.UseHttpsRedirection();
