@@ -1,0 +1,23 @@
+﻿@{
+	Layout = "_Layout";
+	ViewData["Title"] = "Register";
+}
+
+<h2>Register</h2>
+
+<form id="registerForm">
+	<label>Email</label>
+	<input name="email" type="email" required />
+
+	<label>Password</label>
+	<input name="password" type="password" required />
+
+	<label>Confirm Password</label>
+	<input name="confirmPassword" type="password" required />
+
+	<button type="submit">Register</button>
+</form>
+
+<p><a href="/Auth/Login">Back to login</a></p>
+
+<script src="/js/auth-ui.js"></script>

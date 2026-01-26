@@ -6,47 +6,56 @@ using System.Text;
 using LastCallMotorAuctions.API.Middleware;
 using LastCallMotorAuctions.API.Hubs;
 using LastCallMotorAuctions.API.Services;
-using System.Data.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DbContext
+// =======================
+// Database
+// =======================
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add services to the container.
-builder.Services.AddControllers();
+// =======================
+// MVC + Views (REQUIRED)
+// =======================
+builder.Services.AddControllersWithViews();
 
-// OpenAPI/Swagger Configuration with JWT
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// =======================
+// OpenAPI / Swagger
+// =======================
 builder.Services.AddOpenApi();
 
-// Cors Configuration
-var allowedOrigins = builder.Configuration.GetSection("CORS:AllowedOrigins").Get<string[]>()
-    ?? Array.Empty<string>();
+// =======================
+// CORS
+// =======================
+var allowedOrigins = builder.Configuration
+    .GetSection("CORS:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(allowedOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    }); 
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
 });
 
-// JWT Authentication Configuration
-var jwtKey = builder.Configuration["JWT:Key"] ?? throw new InvalidOperationException("JWT Key is not configured");
+// =======================
+// JWT Authentication
+// =======================
+var jwtKey = builder.Configuration["JWT:Key"]
+    ?? throw new InvalidOperationException("JWT Key is not configured");
+
 var jwtIssuer = builder.Configuration["JWT:Issuer"] ?? "LastCallMotorAuctions";
 var jwtAudience = builder.Configuration["JWT:Audience"] ?? "LastCallMotorAuctions";
-var jwtExpiryMinutes = builder.Configuration.GetValue<int>("JWT:ExpiryMinutes", 60);
 
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -58,12 +67,16 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtIssuer,
         ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtKey)
+        ),
         ClockSkew = TimeSpan.Zero
     };
 });
 
+// =======================
 // Authorization Policies
+// =======================
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("BuyerOnly", policy => policy.RequireRole("Buyer"));
@@ -72,53 +85,91 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("BuyerOrSeller", policy => policy.RequireRole("Buyer", "Seller"));
 });
 
-// SignalR Configuration
+// =======================
+// SignalR
+// =======================
 builder.Services.AddSignalR();
 
-// Register Services
+// =======================
+// Services
+// =======================
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IAuctionService, AuctionService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 
+// =======================
 // Health Checks
+// =======================
 builder.Services.AddHealthChecks()
-    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is healthy"))
+    .AddCheck("self", () =>
+        Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is healthy"))
     .AddSqlServer(
-        connectionString: builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
+        builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
         name: "database",
         failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
-        tags: new[] {"db", "sql", "sqlserver"});
+        tags: new[] { "db", "sql", "sqlserver" }
+    );
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// =======================
+// Development tools
+// =======================
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 
-    app.MapGet("/", () => Results.Redirect("/openapi/v1.json"))
-    .ExcludeFromDescription();
+    // Move OpenAPI redirect off the root URL so MVC Home page can load
+    app.MapGet("/docs", () => Results.Redirect("/openapi/v1.json"))
+        .ExcludeFromDescription();
 }
+
 
 app.UseHttpsRedirection();
 
-// Error handling middleware
+// =======================
+// Global Error Handling
+// =======================
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
-// Cors middleware
+// =======================
+// Static Files (CSS / JS)
+// =======================
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// =======================
+// CORS
+// =======================
 app.UseCors("AllowFrontend");
 
-// Authentication and Authorization Middleware
+// =======================
+// Auth
+// =======================
 app.UseAuthentication();
 app.UseAuthorization();
 
+// =======================
+// MVC ROUTING (IMPORTANT)
+// =======================
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
+
+// API controllers (attribute routing)
 app.MapControllers();
 
-// Map SignalR hub
+// =======================
+// SignalR
+// =======================
 app.MapHub<BiddingHub>("/hubs/bidding");
 
-// Health Check endpoints
+// =======================
+// Health Endpoints
+// =======================
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
