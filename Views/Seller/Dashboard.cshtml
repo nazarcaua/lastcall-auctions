@@ -1,0 +1,264 @@
+﻿@using LastCallMotorAuctions.API.Models
+@model List<Auction>
+
+@{
+    ViewData["Title"] = "Seller Dashboard";
+
+    // Placeholder stats (replace later with real calculations)
+    var totalListings = Model?.Count ?? 0;
+    var activeListings = Model?.Count(a => a.EndTime > DateTime.UtcNow) ?? 0;
+    var endedListings = totalListings - activeListings;
+
+    // Placeholders until you add bids/payments relationships
+    var totalBidsPlaceholder = 0;
+    var revenuePlaceholder = 0.00m;
+
+    // "Action needed" placeholders
+    var needsAttentionCount = 0; // e.g., reserve not met, missing photos, pending verification, etc.
+}
+
+<div class="dashboard-header">
+    <h1>Seller Dashboard</h1>
+    <p class="muted">Manage your listings, track activity, and review sales.</p>
+</div>
+
+@if (ViewBag.DbError != null)
+{
+    <div class="alert alert-warning">
+        @ViewBag.DbError
+    </div>
+}
+
+<div class="dashboard-cards">
+    <div class="card">
+        <div class="card-label">Total Listings</div>
+        <div class="card-value">@totalListings</div>
+        <div class="card-sub">All time</div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Active Listings</div>
+        <div class="card-value">@activeListings</div>
+        <div class="card-sub">Currently running</div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Ended Listings</div>
+        <div class="card-value">@endedListings</div>
+        <div class="card-sub">Finished auctions</div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Total Bids</div>
+        <div class="card-value">@totalBidsPlaceholder</div>
+        <div class="card-sub">Placeholder (connect bids later)</div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Revenue</div>
+        <div class="card-value">$@revenuePlaceholder</div>
+        <div class="card-sub">Placeholder (connect payments later)</div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Needs Attention</div>
+        <div class="card-value">@needsAttentionCount</div>
+        <div class="card-sub">Placeholder (rules later)</div>
+    </div>
+</div>
+
+<div class="dashboard-actions">
+    <a class="btn" href="/Listings/Create">Create New Listing</a>
+    <a class="btn btn-outline" href="/Seller/Listings">View All Listings</a>
+    <a class="btn btn-outline" href="/Seller/Sales">Sales & Payouts</a>
+</div>
+
+<hr class="divider" />
+
+<div class="section">
+    <div class="section-header">
+        <h2>Active Auctions</h2>
+        <p class="muted">Your auctions that are currently running.</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Auction ID</th>
+                <th>Listing ID</th>
+                <th>Start Price</th>
+                <th>Reserve</th>
+                <th>Ends</th>
+                <th>Time Left</th>
+                <th>Status</th>
+                <th style="width:160px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var active = (Model ?? new List<Auction>())
+                .Where(a => a.EndTime > DateTime.UtcNow)
+                .OrderBy(a => a.EndTime)
+                .ToList();
+
+                if (!active.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="muted">No active auctions yet.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var a in active)
+                    {
+                        var timeLeft = a.EndTime - DateTime.UtcNow;
+                        var timeLeftText = timeLeft.TotalSeconds <= 0
+                        ? "Ended"
+                        : $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h {timeLeft.Minutes}m";
+
+                        <tr>
+                            <td>@a.AuctionId</td>
+                            <td>@a.ListingId</td>
+                            <td>@a.StartPrice</td>
+                            <td>@(a.ReservePrice?.ToString() ?? "-")</td>
+                            <td>@a.EndTime.ToLocalTime()</td>
+                            <td>@timeLeftText</td>
+                            <td>@(a.Status?.Name ?? $"StatusId: {a.StatusId}")</td>
+                            <td>
+                                <a class="link" href="/Auctions/Details/@a.AuctionId">View</a>
+                                <span class="sep">|</span>
+                                <a class="link" href="/Auctions/Edit/@a.AuctionId">Edit</a>
+                                <span class="sep">|</span>
+                                <a class="link danger" href="/Auctions/End/@a.AuctionId">End</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <h2>Recently Ended</h2>
+        <p class="muted">Your most recently ended auctions.</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Auction ID</th>
+                <th>Listing ID</th>
+                <th>Start Price</th>
+                <th>Reserve</th>
+                <th>Ended</th>
+                <th>Status</th>
+                <th style="width:160px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var ended = (Model ?? new List<Auction>())
+                .Where(a => a.EndTime <= DateTime.UtcNow)
+                .OrderByDescending(a => a.EndTime)
+                .Take(5)
+                .ToList();
+
+                if (!ended.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="muted">No ended auctions yet.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var a in ended)
+                    {
+                        <tr>
+                            <td>@a.AuctionId</td>
+                            <td>@a.ListingId</td>
+                            <td>@a.StartPrice</td>
+                            <td>@(a.ReservePrice?.ToString() ?? "-")</td>
+                            <td>@a.EndTime.ToLocalTime()</td>
+                            <td>@(a.Status?.Name ?? $"StatusId: {a.StatusId}")</td>
+                            <td>
+                                <a class="link" href="/Auctions/Details/@a.AuctionId">View</a>
+                                <span class="sep">|</span>
+                                <a class="link" href="/Seller/Sales">Sale Details</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .dashboard-header { margin-bottom: 14px; }
+    .muted { opacity: .75; }
+
+    .dashboard-cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 14px 0 10px 0;
+    }
+
+    .card {
+        border: 1px solid rgba(0,0,0,.12);
+        border-radius: 12px;
+        padding: 14px;
+        background: rgba(255,255,255,.65);
+    }
+
+    .card-label { font-size: 13px; opacity: .8; }
+    .card-value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+    .card-sub { font-size: 12px; opacity: .7; margin-top: 4px; }
+
+    .dashboard-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 12px 0 18px 0;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,.14);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .btn-outline { background: transparent; }
+    .divider { margin: 18px 0; opacity: .25; }
+
+    .section { margin-top: 18px; }
+    .section-header { margin-bottom: 8px; }
+
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 10px; border-bottom: 1px solid rgba(0,0,0,.1); text-align: left; }
+    .table th { font-size: 13px; opacity: .8; }
+
+    .link { text-decoration: none; }
+    .sep { margin: 0 6px; opacity: .35; }
+    .danger { color: #b00020; }
+
+    .alert {
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,.14);
+        margin: 10px 0;
+    }
+    .alert-warning { background: rgba(255, 193, 7, 0.15); }
+
+    @@media (max-width: 900px) {
+        .dashboard-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @@media (max-width: 600px) {
+        .dashboard-cards { grid-template-columns: 1fr; }
+    }
+</style>
