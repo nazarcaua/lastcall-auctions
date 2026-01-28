@@ -22,7 +22,7 @@ public class UsersController : Controller
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] CreateUserDto createuserDto)
+    public async Task<IActionResult> Register([FromBody] CreateUserDto createUserDto)
     {
         try
         {

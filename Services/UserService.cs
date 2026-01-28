@@ -24,49 +24,16 @@ namespace LastCallMotorAuctions.API.Services
             _configuration = configuration;
             _logger = logger;
         }
-        public async Task<AuthResponseDto> RegisterAsync(CreateUserDto createUserDto)
+        public Task<AuthResponseDto> RegisterAsync(CreateUserDto createUserDto)
         {
-            // TODO: Implement user registration
-            // Check if user already exists
-            //var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == createUserDto.Email);
-            //if (existingUser !== null)
-            //{
-            //    throw new ArgumentException("User with this email already exists");
-            //}
+            // Registration not implemented yet
+            throw new NotImplementedException();
+        }
 
-            //// Hash password using BCRYPT
-            //string hashedPassword = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password);
-
-            //// Create new user (NEED USER MDOEL)
-            //var user = new User
-            //{
-            //    Username = createUserDto.Username,
-            //    Email = createUserDto.Email,
-            //    Password = hashedPassword,
-            //    Location = createUserDto.Location,
-            //    Role = "Buyer" // Gives the default role for the user
-            //};
-
-            //_context.Users.Add(user);
-            //await _context.SaveChangesAsync();
-
-            //// Generate user JWT token
-            //var token = GenerateJwtToken(/* user */);
-
-            //// Return the response
-            //return new AuthResponseDto
-            //{
-            //    Token = token,
-            //    User = new UserResponseDto
-            //    {
-            //        UserId = user.UserId,
-            //        Username = user.UserName,
-            //        Email = user.Email,
-            //        Location = user.Location,
-            //        Role = user.Role
-            //    },
-            //    ExpiresAt = DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>("JWT:ExpiryMinutes", 60))
-            //};
+        public Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
+        {
+            // Login not implemented yet
+            throw new NotImplementedException();
         }
 
         //public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
