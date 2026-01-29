@@ -6,6 +6,8 @@ using System.Text;
 using LastCallMotorAuctions.API.Middleware;
 using LastCallMotorAuctions.API.Hubs;
 using LastCallMotorAuctions.API.Services;
+using Microsoft.AspNetCore.Identity;
+using LastCallMotorAuctions.API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +44,29 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+
+// =======================
+// Identity (User + Roles)
+// =======================
+builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
+{
+    // Password rules
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 8;
+
+    // User rules
+    options.User.RequireUniqueEmail = true;
+
+    // Lockout (optional)
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
 // =======================
 // JWT Authentication

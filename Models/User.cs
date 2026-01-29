@@ -1,11 +1,10 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace LastCallMotorAuctions.API.Models
 {
-    public class User : Entity
+    public class User : IdentityUser<int>
     {
-        public int UserId { get; set; }
-        public string Email { get; set; } = null!;
-        public string PasswordHash { get; set; } = null!;
-        public string FullName { get; set; } = null!;
+        public string FullName { get; set; } = null;
         public byte StatusId { get; set; }
 
         // Navigation
