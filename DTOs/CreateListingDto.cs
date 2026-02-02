@@ -32,6 +32,13 @@ namespace LastCallMotorAuctions.API.DTOs
 
         [Required]
         [StringLength(80)]
+        public string City { get; set; } = null!;
+
+        [StringLength(80)]
+        public string? Region { get; set; }
+
+        [Required]
+        [StringLength(80)]
         public string Country { get; set; } = null;
 
         [StringLength(20)]
