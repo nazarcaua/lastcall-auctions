@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using LastCallMotorAuctions.API.Models;
 
 namespace LastCallMotorAuctions.API.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -11,11 +13,10 @@ public class ApplicationDbContext : DbContext
 
     }
 
-    // DbSets for models
-    public DbSet<User> Users { get; set; } = null!;
-    public DbSet<Role> Roles { get; set; } = null!;
-    public DbSet<UserRole> UserRoles { get; set; } = null!;
+    // Note: Users, Roles, and UserRoles are now handled by Identity
+    // ApplicationUser replaces the old User model
 
+    // DbSets for models
     public DbSet<VehicleMake> VehicleMakes { get; set; } = null!;
     public DbSet<VehicleModel> VehicleModels { get; set; } = null!;
     public DbSet<Location> Locations { get; set; } = null!;
@@ -39,6 +40,15 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configure User
+        modelBuilder.Entity<User>(b =>
+        {
+            b.Property(u => u.FullName).HasMaxLength(150).IsRequired();
+            b.Property(u => u.StatusId).IsRequired();
+            b.HasIndex(u => u.Email).IsUnique();
+            b.HasOne(u => u.Status).WithMany().HasForeignKey(u => u.StatusId).OnDelete(DeleteBehavior.Restrict);
+        });
 
         // Lookups
         modelBuilder.Entity<UserStatus>(b =>
@@ -124,33 +134,6 @@ public class ApplicationDbContext : DbContext
                 new NotificationType { TypeId = 3, Name = "AuctionEnded" },
                 new NotificationType { TypeId = 4, Name = "PaymentStatusChanged" }
             );
-        });
-
-        // Users & Roles
-        modelBuilder.Entity<User>(b =>
-        {
-            b.HasKey(x => x.UserId);
-            b.HasIndex(x => x.Email).IsUnique();
-            b.Property(x => x.Email).HasMaxLength(320).IsRequired();
-            b.Property(x => x.PasswordHash).HasMaxLength(255).IsRequired();
-            b.Property(x => x.FullName).HasMaxLength(150).IsRequired();
-            b.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-            b.HasOne(x => x.Status).WithMany();
-        });
-
-        modelBuilder.Entity<Role>(b =>
-        {
-            b.HasKey(x => x.RoleId);
-            b.HasIndex(x => x.Name).IsUnique();
-            b.Property(x => x.Name).HasMaxLength(50).IsRequired();
-        });
-
-        modelBuilder.Entity<UserRole>(b =>
-        {
-            b.HasKey(x => new { x.UserId, x.RoleId });
-            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
-            b.HasOne(x => x.Role).WithMany().HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Restrict);
-            b.Property(x => x.AssignedAt).HasDefaultValueSql("SYSUTCDATETIME()");
         });
 
         // Vehicles
