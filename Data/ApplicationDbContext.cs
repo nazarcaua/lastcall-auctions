@@ -16,9 +16,13 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     // Note: Users, Roles, and UserRoles are now handled by Identity
     // ApplicationUser replaces the old User model
 
+
     // DbSets for models
+    public DbSet<VehicleYear> VehicleYears { get; set; } = null!;
     public DbSet<VehicleMake> VehicleMakes { get; set; } = null!;
     public DbSet<VehicleModel> VehicleModels { get; set; } = null!;
+    public DbSet<VehicleYearMake> VehicleYearMakes { get; set; } = null!;
+    public DbSet<VehicleYearMakeModel> VehicleYearMakeModels { get; set; } = null!;
     public DbSet<Location> Locations { get; set; } = null!;
 
     public DbSet<Listing> Listings { get; set; } = null!;
@@ -137,6 +141,12 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
         });
 
         // Vehicles
+        modelBuilder.Entity<VehicleYear>(b =>
+        {
+            b.HasKey(x => x.Year);
+            b.Property(x => x.Year).ValueGeneratedNever();
+        });
+
         modelBuilder.Entity<VehicleMake>(b =>
         {
             b.HasKey(x => x.MakeId);
@@ -150,6 +160,22 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
             b.Property(x => x.Name).HasMaxLength(60).IsRequired();
             b.HasIndex(x => new { x.MakeId, x.Name }).IsUnique();
             b.HasOne(x => x.Make).WithMany(m => m.Models).HasForeignKey(x => x.MakeId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<VehicleYearMake>(b =>
+        {
+            b.HasKey(x => x.YearMakeId);
+            b.HasIndex(x => new { x.Year, x.MakeId }).IsUnique();
+            b.HasOne(x => x.VehicleYear).WithMany(y => y.YearMakes).HasForeignKey(x => x.Year).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Make).WithMany(m => m.YearMakes).HasForeignKey(x => x.MakeId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<VehicleYearMakeModel>(b =>
+        {
+            b.HasKey(x => x.YearMakeModelId);
+            b.HasIndex(x => new { x.YearMakeId, x.ModelId }).IsUnique();
+            b.HasOne(x => x.YearMake).WithMany(ym => ym.YearMakeModels).HasForeignKey(x => x.YearMakeId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Model).WithMany(m => m.YearMakeModels).HasForeignKey(x => x.ModelId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Location>(b =>

@@ -2,7 +2,6 @@
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Services;
 using Microsoft.AspNetCore.Authorization;
-using System.Runtime.InteropServices;
 
 namespace LastCallMotorAuctions.API.Controllers;
 

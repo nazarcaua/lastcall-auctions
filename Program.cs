@@ -206,4 +206,14 @@ app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthC
     Predicate = check => !check.Tags.Contains("ready")
 });
 
+// =======================
+// Seed Vehicle Data (only if empty)
+// =======================
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    await NhtsaVehicleDataSeeder.SeedFromNhtsaAsync(context, logger);
+}
+
 app.Run();

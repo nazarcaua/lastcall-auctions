@@ -7,5 +7,6 @@ namespace LastCallMotorAuctions.API.Models
         public string Name { get; set; } = null!;
 
         public VehicleMake? Make { get; set; }
+        public ICollection<VehicleYearMakeModel> YearMakeModels { get; set; } = new List<VehicleYearMakeModel>();
     }
 }
