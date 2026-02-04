@@ -6,5 +6,6 @@
         public string Email { get; set; } = null!;
         public string FullName { get; set; } = null!;
         public byte StatusId { get; set; }
+        public List<string> Roles { get; set; } = new();
     }
 }

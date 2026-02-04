@@ -1,13 +1,9 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using LastCallMotorAuctions.API.Data;
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 namespace LastCallMotorAuctions.API.Services
@@ -16,20 +12,17 @@ namespace LastCallMotorAuctions.API.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
-        private readonly RoleManager<IdentityRole<int>> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
-            RoleManager<IdentityRole<int>> roleManager,
             IConfiguration configuration,
             ILogger<UserService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _roleManager = roleManager;
             _configuration = configuration;
             _logger = logger;
         }
@@ -60,22 +53,8 @@ namespace LastCallMotorAuctions.API.Services
                 throw new ArgumentException($"Registration failed: {errors}");
             }
 
-            // Ensure Buyer role exists
+            // Assign Buyer role (role is seeded on app startup via RoleSeeder)
             const string buyerRoleName = "Buyer";
-            if (!await _roleManager.RoleExistsAsync(buyerRoleName))
-            {
-                var roleResult = await _roleManager.CreateAsync(
-                    new IdentityRole<int> { Name = buyerRoleName, NormalizedName = buyerRoleName.ToUpper() });
-
-                if (!roleResult.Succeeded)
-                {
-                    var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-                    _logger.LogError("Failed to create Buyer role: {Errors}", errors);
-                    throw new InvalidOperationException("Failed to create default Buyer role.");
-                }
-            }
-
-            // Assign Buyer role
             var addToRoleResult = await _userManager.AddToRoleAsync(user, buyerRoleName);
             if (!addToRoleResult.Succeeded)
             {
@@ -97,6 +76,7 @@ namespace LastCallMotorAuctions.API.Services
                     Email = user.Email,
                     FullName = user.FullName,
                     StatusId = user.StatusId,
+                    Roles = new List<string> { buyerRoleName }
                 },
                 ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
             };
@@ -133,9 +113,14 @@ namespace LastCallMotorAuctions.API.Services
                 throw new UnauthorizedAccessException("Invalid email or password.");
             }
 
+            // Sign in with cookie for MVC views
+            await _signInManager.SignInAsync(user, isPersistent: true);
+
             // Generate JWT Token
             var token = await GenerateJwtToken(user);
-            var expiryMinutes = _configuration.GetValue<int>("JWT:ExpiryMinues", 60);
+            var expiryMinutes = _configuration.GetValue<int>("JWT:ExpiryMinutes", 60);
+            var roles = await _userManager.GetRolesAsync(user);
+
             return new AuthResponseDto
             {
                 Token = token,
@@ -145,6 +130,7 @@ namespace LastCallMotorAuctions.API.Services
                     Email = user.Email,
                     FullName = user.FullName,
                     StatusId = user.StatusId,
+                    Roles = roles.ToList()
                 },
                 ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
             };
@@ -158,12 +144,15 @@ namespace LastCallMotorAuctions.API.Services
                 return null;
             }
 
+            var roles = await _userManager.GetRolesAsync(user);
+
             return new UserResponseDto
             {
                 UserId = userId,
                 Email = user.Email,
                 FullName = user.FullName,
                 StatusId = user.StatusId,
+                Roles = roles.ToList()
             };
         }
 

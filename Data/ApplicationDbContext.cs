@@ -12,11 +12,6 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     {
 
     }
-
-    // Note: Users, Roles, and UserRoles are now handled by Identity
-    // ApplicationUser replaces the old User model
-
-
     // DbSets for models
     public DbSet<VehicleYear> VehicleYears { get; set; } = null!;
     public DbSet<VehicleMake> VehicleMakes { get; set; } = null!;

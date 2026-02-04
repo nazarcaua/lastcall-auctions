@@ -1,25 +1,15 @@
 ﻿@using LastCallMotorAuctions.API.Models
-@model List<Auction>
+@using LastCallMotorAuctions.API.ViewModels
+@model SellerDashboardViewModel
 
 @{
     ViewData["Title"] = "Seller Dashboard";
-
-    // Placeholder stats (replace later with real calculations)
-    var totalListings = Model?.Count ?? 0;
-    var activeListings = Model?.Count(a => a.EndTime > DateTime.UtcNow) ?? 0;
-    var endedListings = totalListings - activeListings;
-
-    // Placeholders until you add bids/payments relationships
-    var totalBidsPlaceholder = 0;
-    var revenuePlaceholder = 0.00m;
-
-    // "Action needed" placeholders
-    var needsAttentionCount = 0; // e.g., reserve not met, missing photos, pending verification, etc.
+    var now = DateTime.UtcNow;
 }
 
 <div class="dashboard-header">
     <h1>Seller Dashboard</h1>
-    <p class="muted">Manage your listings, track activity, and review sales.</p>
+    <p class="muted">Welcome back, @Model.SellerName! Manage your listings, track activity, and review sales.</p>
 </div>
 
 @if (ViewBag.DbError != null)
@@ -32,38 +22,38 @@
 <div class="dashboard-cards">
     <div class="card">
         <div class="card-label">Total Listings</div>
-        <div class="card-value">@totalListings</div>
+        <div class="card-value">@Model.TotalListings</div>
         <div class="card-sub">All time</div>
     </div>
 
     <div class="card">
         <div class="card-label">Active Listings</div>
-        <div class="card-value">@activeListings</div>
+        <div class="card-value">@Model.ActiveListings</div>
         <div class="card-sub">Currently running</div>
     </div>
 
     <div class="card">
         <div class="card-label">Ended Listings</div>
-        <div class="card-value">@endedListings</div>
+        <div class="card-value">@Model.EndedListings</div>
         <div class="card-sub">Finished auctions</div>
     </div>
 
     <div class="card">
         <div class="card-label">Total Bids</div>
-        <div class="card-value">@totalBidsPlaceholder</div>
-        <div class="card-sub">Placeholder (connect bids later)</div>
+        <div class="card-value">@Model.TotalBids</div>
+        <div class="card-sub">Across all auctions</div>
     </div>
 
     <div class="card">
         <div class="card-label">Revenue</div>
-        <div class="card-value">$@revenuePlaceholder</div>
-        <div class="card-sub">Placeholder (connect payments later)</div>
+        <div class="card-value">$@Model.TotalRevenue.ToString("N2")</div>
+        <div class="card-sub">From completed payments</div>
     </div>
 
     <div class="card">
         <div class="card-label">Needs Attention</div>
-        <div class="card-value">@needsAttentionCount</div>
-        <div class="card-sub">Placeholder (rules later)</div>
+        <div class="card-value">@Model.NeedsAttentionCount</div>
+        <div class="card-sub">Reserve not met / no winner</div>
     </div>
 </div>
 
@@ -85,7 +75,7 @@
         <thead>
             <tr>
                 <th>Auction ID</th>
-                <th>Listing ID</th>
+                <th>Vehicle</th>
                 <th>Start Price</th>
                 <th>Reserve</th>
                 <th>Ends</th>
@@ -96,8 +86,8 @@
         </thead>
         <tbody>
             @{
-                var active = (Model ?? new List<Auction>())
-                .Where(a => a.EndTime > DateTime.UtcNow)
+                var active = (Model.Auctions ?? new List<Auction>())
+                .Where(a => a.EndTime > now)
                 .OrderBy(a => a.EndTime)
                 .ToList();
 
@@ -111,17 +101,21 @@
                 {
                     foreach (var a in active)
                     {
-                        var timeLeft = a.EndTime - DateTime.UtcNow;
+                        var timeLeft = a.EndTime - now;
                         var timeLeftText = timeLeft.TotalSeconds <= 0
                         ? "Ended"
                         : $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h {timeLeft.Minutes}m";
+                        
+                        var vehicleTitle = a.Listing != null 
+                            ? $"{a.Listing.Year} {a.Listing.Make?.Name ?? ""} {a.Listing.Model?.Name ?? ""}"
+                            : $"Listing #{a.ListingId}";
 
                         <tr>
                             <td>@a.AuctionId</td>
-                            <td>@a.ListingId</td>
-                            <td>@a.StartPrice</td>
-                            <td>@(a.ReservePrice?.ToString() ?? "-")</td>
-                            <td>@a.EndTime.ToLocalTime()</td>
+                            <td>@vehicleTitle</td>
+                            <td>$@a.StartPrice.ToString("N2")</td>
+                            <td>@(a.ReservePrice.HasValue ? $"${a.ReservePrice.Value:N2}" : "-")</td>
+                            <td>@a.EndTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
                             <td>@timeLeftText</td>
                             <td>@(a.Status?.Name ?? $"StatusId: {a.StatusId}")</td>
                             <td>
@@ -149,7 +143,7 @@
         <thead>
             <tr>
                 <th>Auction ID</th>
-                <th>Listing ID</th>
+                <th>Vehicle</th>
                 <th>Start Price</th>
                 <th>Reserve</th>
                 <th>Ended</th>
@@ -159,8 +153,8 @@
         </thead>
         <tbody>
             @{
-                var ended = (Model ?? new List<Auction>())
-                .Where(a => a.EndTime <= DateTime.UtcNow)
+                var ended = (Model.Auctions ?? new List<Auction>())
+                .Where(a => a.EndTime <= now)
                 .OrderByDescending(a => a.EndTime)
                 .Take(5)
                 .ToList();
@@ -175,12 +169,16 @@
                 {
                     foreach (var a in ended)
                     {
+                        var vehicleTitle = a.Listing != null 
+                            ? $"{a.Listing.Year} {a.Listing.Make?.Name ?? ""} {a.Listing.Model?.Name ?? ""}"
+                            : $"Listing #{a.ListingId}";
+
                         <tr>
                             <td>@a.AuctionId</td>
-                            <td>@a.ListingId</td>
-                            <td>@a.StartPrice</td>
-                            <td>@(a.ReservePrice?.ToString() ?? "-")</td>
-                            <td>@a.EndTime.ToLocalTime()</td>
+                            <td>@vehicleTitle</td>
+                            <td>$@a.StartPrice.ToString("N2")</td>
+                            <td>@(a.ReservePrice.HasValue ? $"${a.ReservePrice.Value:N2}" : "-")</td>
+                            <td>@a.EndTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
                             <td>@(a.Status?.Name ?? $"StatusId: {a.StatusId}")</td>
                             <td>
                                 <a class="link" href="/Auctions/Details/@a.AuctionId">View</a>

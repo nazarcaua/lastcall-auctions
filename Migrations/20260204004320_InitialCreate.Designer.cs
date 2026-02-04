@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LastCallMotorAuctions.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260129010532_InitialIdentitySetup")]
-    partial class InitialIdentitySetup
+    [Migration("20260204004320_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -715,6 +715,64 @@ namespace LastCallMotorAuctions.API.Migrations
                     b.ToTable("VehicleModels");
                 });
 
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleYear", b =>
+                {
+                    b.Property<short>("Year")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("Year");
+
+                    b.ToTable("VehicleYears");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleYearMake", b =>
+                {
+                    b.Property<int>("YearMakeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("YearMakeId"));
+
+                    b.Property<int>("MakeId")
+                        .HasColumnType("int");
+
+                    b.Property<short>("Year")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("YearMakeId");
+
+                    b.HasIndex("MakeId");
+
+                    b.HasIndex("Year", "MakeId")
+                        .IsUnique();
+
+                    b.ToTable("VehicleYearMakes");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleYearMakeModel", b =>
+                {
+                    b.Property<int>("YearMakeModelId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("YearMakeModelId"));
+
+                    b.Property<int>("ModelId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("YearMakeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("YearMakeModelId");
+
+                    b.HasIndex("ModelId");
+
+                    b.HasIndex("YearMakeId", "ModelId")
+                        .IsUnique();
+
+                    b.ToTable("VehicleYearMakeModels");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -992,6 +1050,44 @@ namespace LastCallMotorAuctions.API.Migrations
                     b.Navigation("Make");
                 });
 
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleYearMake", b =>
+                {
+                    b.HasOne("LastCallMotorAuctions.API.Models.VehicleMake", "Make")
+                        .WithMany("YearMakes")
+                        .HasForeignKey("MakeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LastCallMotorAuctions.API.Models.VehicleYear", "VehicleYear")
+                        .WithMany("YearMakes")
+                        .HasForeignKey("Year")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Make");
+
+                    b.Navigation("VehicleYear");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleYearMakeModel", b =>
+                {
+                    b.HasOne("LastCallMotorAuctions.API.Models.VehicleModel", "Model")
+                        .WithMany("YearMakeModels")
+                        .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LastCallMotorAuctions.API.Models.VehicleYearMake", "YearMake")
+                        .WithMany("YearMakeModels")
+                        .HasForeignKey("YearMakeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Model");
+
+                    b.Navigation("YearMake");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
@@ -1046,6 +1142,23 @@ namespace LastCallMotorAuctions.API.Migrations
             modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleMake", b =>
                 {
                     b.Navigation("Models");
+
+                    b.Navigation("YearMakes");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleModel", b =>
+                {
+                    b.Navigation("YearMakeModels");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleYear", b =>
+                {
+                    b.Navigation("YearMakes");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleYearMake", b =>
+                {
+                    b.Navigation("YearMakeModels");
                 });
 #pragma warning restore 612, 618
         }

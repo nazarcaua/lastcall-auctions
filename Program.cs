@@ -68,8 +68,9 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+
 // =======================
-// JWT Authentication
+// JWT + Cookie Authentication
 // =======================
 var jwtKey = builder.Configuration["JWT:Key"]
     ?? throw new InvalidOperationException("JWT Key is not configured");
@@ -79,8 +80,10 @@ var jwtAudience = builder.Configuration["JWT:Audience"] ?? "LastCallMotorAuction
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    // Use cookies as default for MVC views
+    options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -214,6 +217,9 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await NhtsaVehicleDataSeeder.SeedFromNhtsaAsync(context, logger);
+    
+    // Seed identity roles
+    await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
 }
 
 app.Run();
