@@ -1,0 +1,53 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Home";
+}
+
+<section class="home">
+    <h1>LastCall Motor Auctions</h1>
+
+    <p>
+        A secure, real-time automotive auction platform designed to modernize traditional vehicle auctions.
+        Bid or sell vehicles from anywhere, with a focus on transparency, verification, and nationwide access.
+    </p>
+
+    <div class="highlights">
+        <h3>What this platform aims to provide</h3>
+        <ul>
+            <li><strong>Real-time bidding</strong> with accurate time synchronization</li>
+            <li><strong>Buyer and seller roles</strong> (buyers by default, sellers require approval)</li>
+            <li><strong>Vehicle transparency</strong> through inspections and condition reporting</li>
+            <li><strong>Market value insights</strong> planned via Kelley Blue Book integration</li>
+            <li><strong>Vehicle verification</strong> planned via VIN auditing</li>
+            <li><strong>Secure payments</strong> with pre-authorization (planned)</li>
+        </ul>
+    </div>
+
+    <!-- PERFECT DASHBOARD BUTTONS -->
+    <div class="dashboard-actions mt-5">
+        <h3 class="text-center mb-4">Quick Access</h3>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4 col-sm-6">
+                <a href="/Auctions/Browse" class="btn btn-primary btn-lg w-100 h-100 p-4 text-center shadow-sm border-0 rounded-3 position-relative overflow-hidden" style="min-height: 140px;">
+                    <i class="fas fa-car-side fs-1 mb-3 d-block text-white"></i>
+                    <h4 class="mb-1 fw-bold text-white">Browse Auctions</h4>
+                    <small class="text-white-50 d-block">Find your dream car</small>
+                </a>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <a href="/Buyer/Dashboard" class="btn btn-info btn-lg w-100 h-100 p-4 text-center shadow-sm border-0 rounded-3 text-white position-relative overflow-hidden" style="min-height: 140px;">
+                    <i class="fas fa-gavel fs-1 mb-3 d-block"></i>
+                    <h4 class="mb-1 fw-bold">My Bids</h4>
+                    <small class="text-white-50 d-block">Track bids & wins</small>
+                </a>
+            </div>
+            <div class="col-md-4 col-sm-12">
+                <a href="/Seller/Dashboard" class="btn btn-success btn-lg w-100 h-100 p-4 text-center shadow-sm border-0 rounded-3 text-white position-relative overflow-hidden" style="min-height: 140px;">
+                    <i class="fas fa-chart-line fs-1 mb-3 d-block"></i>
+                    <h4 class="mb-1 fw-bold">Seller Dashboard</h4>
+                    <small class="text-white-50 d-block">Manage listings</small>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
