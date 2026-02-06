@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LastCallMotorAuctions.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260204004320_InitialCreate")]
+    [Migration("20260205004344_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
