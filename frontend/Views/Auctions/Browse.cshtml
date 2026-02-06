@@ -1,0 +1,60 @@
+@model List<LastCallMotorAuctions.API.ViewModels.ListingAuctionViewModel>
+
+<h2>Browse Auctions</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <div>No listings available.</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            var l = item.Listing;
+            var auction = item.Auction;
+
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5>@l.Title (@l.Year)</h5>
+                        <p>
+                            <strong>Make:</strong> @(l.Make?.Name ?? "N/A")<br />
+                            <strong>Model:</strong> @(l.Model?.Name ?? "N/A")<br />
+                            <strong>Condition:</strong> @l.ConditionGrade / 5<br />
+                            <strong>Location:</strong> @(l.Location != null ? $"{l.Location.City}, {l.Location.Country}" : "N/A")<br />
+
+                            @if (auction != null)
+                            {
+                                <strong>Start Price:</strong> 
+                                @auction.StartPrice
+                    
+                                <br />
+                                <strong>Reserve Price:</strong>
+ 
+                                @(auction.ReservePrice ?? 0)
+                    
+                                <br />
+                                <strong>Auction Start:</strong>
+ 
+                                @auction.StartTime.ToString("g")
+                    
+                                <br />
+                                <strong>Auction End:</strong>
+ 
+                                @auction.EndTime.ToString("g")
+                    
+                                <br />
+                            }
+                            else
+                            {
+                                <strong>Auction:</strong> @:"Not Scheduled"
+                                
+                                        }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
