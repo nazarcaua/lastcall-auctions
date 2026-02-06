@@ -23,10 +23,42 @@ namespace LastCallMotorAuctions.API.Services
             throw new NotImplementedException();
         }
 
-        public Task<AuctionBrowseDto?> GetAuctionByIdAsync(int auctionId)
+        public async Task<AuctionBrowseDto?> GetAuctionByIdAsync(int auctionId)
         {
-            // TODO: Implement get auction by ID
-            throw new NotImplementedException();
+            var auction = await _context.Auctions
+                .AsNoTracking()
+                .Include(a => a.Listing)
+                    .ThenInclude(l => l!.Make)
+                .Include(a => a.Listing)
+                    .ThenInclude(l => l!.Model)
+                .Include(a => a.Status)
+                .FirstOrDefaultAsync(a => a.AuctionId == auctionId);
+
+            if (auction == null)
+                return null;
+
+            var currentBid = await _context.Bids
+                .AsNoTracking()
+                .Where(b => b.AuctionId == auctionId)
+                .MaxAsync(b => (decimal?)b.Amount);
+
+            var listing = auction.Listing!;
+            return new AuctionBrowseDto
+            {
+                AuctionId = auction.AuctionId,
+                ListingId = auction.ListingId,
+                Title = listing.Title,
+                Year = listing.Year,
+                MakeName = listing.Make?.Name ?? "",
+                ModelName = listing.Model?.Name ?? "",
+                StartPrice = auction.StartPrice,
+                ReservePrice = auction.ReservePrice,
+                StartTime = auction.StartTime,
+                EndTime = auction.EndTime,
+                StatusId = auction.StatusId,
+                StatusName = auction.Status?.Name,
+                CurrentBid = currentBid
+            };
         }
 
         public async Task<List<AuctionBrowseDto>> GetActiveAuctionAsync()
