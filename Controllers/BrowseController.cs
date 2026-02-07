@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using LastCallMotorAuctions.API.Services;
+using LastCallMotorAuctions.API.DTOs;
 
 namespace LastCallMotorAuctions.API.Controllers
 {
@@ -19,14 +20,31 @@ namespace LastCallMotorAuctions.API.Controllers
             var list = await _auctionService.GetActiveAuctionAsync();
             return View(list);
         }
-        
+
         [HttpGet("[controller]/[action]/{id:int}")]
         public async Task<IActionResult> Detail(int id)
         {
+            // First, try to load as an auction group
+            var group = await _auctionService.GetAuctionGroupByIdAsync(id);
+            if (group != null && group.Auctions.Count > 0)
+            {
+                return View(group);
+            }
+
+            // Fall back to a single auction and wrap it in a group DTO
             var auction = await _auctionService.GetAuctionByIdAsync(id);
             if (auction == null)
                 return NotFound();
-            return View(auction);
+
+            var wrapper = new AuctionGroupDetailDto
+            {
+                AuctionGroupId = auction.AuctionGroupId ?? auction.AuctionId,
+                Title = auction.AuctionGroupTitle ?? auction.Title,
+                CreatedAt = auction.StartTime,
+                Auctions = new List<AuctionBrowseDto> { auction }
+            };
+
+            return View(wrapper);
         }
     }
 }

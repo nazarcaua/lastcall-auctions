@@ -2,13 +2,11 @@
 
 namespace LastCallMotorAuctions.API.DTOs
 {
-    public class CreateListingDto
+    public class VehicleItemDto
     {
         [Required]
         [StringLength(120, MinimumLength = 1)]
         public string Title { get; set; } = null!;
-
-        public string? Description { get; set; }
 
         [Required]
         [Range(1886, 2100)]
@@ -20,38 +18,31 @@ namespace LastCallMotorAuctions.API.DTOs
         [Required]
         public int ModelId { get; set; }
 
-        [StringLength(17)]
         public string? Vin { get; set; }
-
-        [Range(0, int.MaxValue)]
         public int? Mileage { get; set; }
-
         [Required]
         [Range(1, 5)]
         public byte ConditionGrade { get; set; }
 
-        [Required]
-        [StringLength(80)]
-        public string City { get; set; } = null!;
-
-        [StringLength(80)]
-        public string? Region { get; set; }
+        public string? Description { get; set; }
 
         [Required]
-        [StringLength(80)]
-        public string Country { get; set; } = null!;
-
-        [StringLength(20)]
-        public string? PostalCode { get; set; }
-
-        // Auction fields (optional) - if provided an auction will be created for this listing
         [Range(0, double.MaxValue)]
-        public decimal? StartPrice { get; set; }
+        public decimal StartPrice { get; set; }
 
         [Range(0, double.MaxValue)]
         public decimal? ReservePrice { get; set; }
+    }
 
-        // End time for the auction in UTC expected from client or local datetime converted by server
+    public class CreateListingDto
+    {
+        // Optional group title - if provided, multiple vehicles will be part of the same auction group
+        public string? AuctionGroupTitle { get; set; }
+
+        [Required]
+        public List<VehicleItemDto> Vehicles { get; set; } = new();
+
+        // Group-level auction end time (shared)
         public DateTime? EndTime { get; set; }
     }
 }

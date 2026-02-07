@@ -5,6 +5,7 @@ namespace LastCallMotorAuctions.API.ViewModels
     public class SellerDashboardViewModel
     {
         public List<Auction> Auctions { get; set; } = new();
+        public List<AuctionGroupViewModel> AuctionGroups { get; set; } = new();
         
         // Stats
         public int TotalListings { get; set; }
@@ -17,5 +18,13 @@ namespace LastCallMotorAuctions.API.ViewModels
         // Current seller info
         public int SellerId { get; set; }
         public string SellerName { get; set; } = string.Empty;
+    }
+
+    public class AuctionGroupViewModel
+    {
+        public int GroupKey { get; set; } // AuctionGroupId if grouped, else AuctionId for single
+        public int? AuctionGroupId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public List<Auction> Auctions { get; set; } = new();
     }
 }

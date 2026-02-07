@@ -20,6 +20,20 @@
     </div>
 }
 
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
 <div class="dashboard-cards">
     <div class="card">
         <div class="card-label">Total Listings</div>
@@ -67,14 +81,14 @@
 <div class="section">
     <div class="section-header">
         <h2>Active Auctions</h2>
-        <p class="muted">Your auctions that are currently running.</p>
+        <p class="muted">Your auctions that are currently running (grouped).</p>
     </div>
 
     <table class="table">
         <thead>
             <tr>
-                <th>Auction ID</th>
-                <th>Vehicle</th>
+                <th>Group</th>
+                <th>Vehicles</th>
                 <th>Start Price</th>
                 <th>Reserve</th>
                 <th>Ends</th>
@@ -85,12 +99,12 @@
         </thead>
         <tbody>
             @{
-                var active = (Model.Auctions ?? new List<Auction>())
-                .Where(a => a.EndTime > now)
-                .OrderBy(a => a.EndTime)
-                .ToList();
+                var activeGroups = (Model.AuctionGroups ?? new List<AuctionGroupViewModel>())
+                    .Where(g => g.Auctions.Any(a => a.EndTime > now))
+                    .OrderBy(g => g.Auctions.Min(a => a.EndTime))
+                    .ToList();
 
-                if (!active.Any())
+                if (!activeGroups.Any())
                 {
                     <tr>
                         <td colspan="8" class="muted">No active auctions yet.</td>
@@ -98,31 +112,31 @@
                 }
                 else
                 {
-                    foreach (var a in active)
+                    foreach (var g in activeGroups)
                     {
-                        var timeLeft = a.EndTime - now;
-                        var timeLeftText = timeLeft.TotalSeconds <= 0
-                        ? "Ended"
-                        : $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h {timeLeft.Minutes}m";
-                        
-                        var vehicleTitle = a.Listing != null 
-                            ? $"{a.Listing.Year} {a.Listing.Make?.Name ?? ""} {a.Listing.Model?.Name ?? ""}"
-                            : $"Listing #{a.ListingId}";
+                        var ends = g.Auctions.Min(a => a.EndTime);
+                        var startPrice = g.Auctions.Min(a => a.StartPrice);
+                        var reserve = g.Auctions.Where(a => a.ReservePrice.HasValue).Select(a => a.ReservePrice.Value).DefaultIfEmpty().Min();
+                        var timeLeft = ends - now;
+                        var timeLeftText = timeLeft.TotalSeconds <= 0 ? "Ended" : $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h {timeLeft.Minutes}m";
 
                         <tr>
-                            <td>@a.AuctionId</td>
-                            <td>@vehicleTitle</td>
-                            <td>$@a.StartPrice.ToString("N2")</td>
-                            <td>@(a.ReservePrice.HasValue ? $"${a.ReservePrice.Value:N2}" : "-")</td>
-                            <td>@a.EndTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                            <td>@g.Title</td>
+                            <td>@(g.Auctions.Count) vehicles</td>
+                            <td>$@startPrice.ToString("N2")</td>
+                            <td>@(reserve > 0 ? $"${reserve:N2}" : "-")</td>
+                            <td>@ends.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
                             <td>@timeLeftText</td>
-                            <td>@(a.Status?.Name ?? $"StatusId: {a.StatusId}")</td>
+                            <td>@(g.Auctions.First().Status?.Name ?? $"StatusId: {g.Auctions.First().StatusId}")</td>
                             <td>
-                                <a class="link" href="/Auctions/Details/@a.AuctionId">View</a>
+                                <a class="link" href="/Browse/Detail/@(g.AuctionGroupId ?? g.GroupKey)">View</a>
                                 <span class="sep">|</span>
-                                <a class="link" href="/Auctions/Edit/@a.AuctionId">Edit</a>
+                                <a class="link" href="/Auctions/Edit/@(g.GroupKey)">Edit</a>
                                 <span class="sep">|</span>
-                                <a class="link danger" href="/Auctions/End/@a.AuctionId">End</a>
+                                <form method="post" action="/Auctions/End/@(g.GroupKey)" style="display:inline;" onsubmit="return confirm('End this auction now? This cannot be undone.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="delete-btn">End</button>
+                                </form>
                             </td>
                         </tr>
                     }
@@ -147,7 +161,7 @@
                 <th>Reserve</th>
                 <th>Ended</th>
                 <th>Status</th>
-                <th style="width:160px;">Actions</th>
+                <th style="width:200px;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -183,6 +197,12 @@
                                 <a class="link" href="/Auctions/Details/@a.AuctionId">View</a>
                                 <span class="sep">|</span>
                                 <a class="link" href="/Seller/Sales">Sale Details</a>
+                                <span class="sep">|</span>
+                                <form method="post" action="/Seller/DeleteAuction" style="display:inline;" onsubmit="return confirm('Permanently delete this auction and all its history?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="auctionId" value="@a.AuctionId" />
+                                    <button type="submit" class="delete-btn">Delete</button>
+                                </form>
                             </td>
                         </tr>
                     }
@@ -191,71 +211,3 @@
         </tbody>
     </table>
 </div>
-
-<style>
-    .dashboard-header { margin-bottom: 14px; }
-    .muted { opacity: .75; }
-
-    .dashboard-cards {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-        margin: 14px 0 10px 0;
-    }
-
-    .card {
-        border: 1px solid rgba(0,0,0,.12);
-        border-radius: 12px;
-        padding: 14px;
-        background: rgba(255,255,255,.65);
-    }
-
-    .card-label { font-size: 13px; opacity: .8; }
-    .card-value { font-size: 28px; font-weight: 700; margin-top: 6px; }
-    .card-sub { font-size: 12px; opacity: .7; margin-top: 4px; }
-
-    .dashboard-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin: 12px 0 18px 0;
-    }
-
-    .btn {
-        display: inline-block;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(0,0,0,.14);
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .btn-outline { background: transparent; }
-    .divider { margin: 18px 0; opacity: .25; }
-
-    .section { margin-top: 18px; }
-    .section-header { margin-bottom: 8px; }
-
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { padding: 10px; border-bottom: 1px solid rgba(0,0,0,.1); text-align: left; }
-    .table th { font-size: 13px; opacity: .8; }
-
-    .link { text-decoration: none; }
-    .sep { margin: 0 6px; opacity: .35; }
-    .danger { color: #b00020; }
-
-    .alert {
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(0,0,0,.14);
-        margin: 10px 0;
-    }
-    .alert-warning { background: rgba(255, 193, 7, 0.15); }
-
-    @@media (max-width: 900px) {
-        .dashboard-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @@media (max-width: 600px) {
-        .dashboard-cards { grid-template-columns: 1fr; }
-    }
-</style>

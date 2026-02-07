@@ -1,20 +1,30 @@
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Create Listing(s)";
+    ViewData["Title"] = "Create New Auction Group";
 }
 
 <section class="page create-listings-page">
-    <h1>Create New Listing(s)</h1>
-    <p class="muted">Add one or more vehicles. Fill required fields and click "Add another" to add more listings.</p>
+    <h1>Create Auction Group</h1>
+    <p class="muted">Enter an auction title, add one or more vehicles, then set the auction end date and submit.</p>
+
+    <label>Auction Title</label>
+    <input id="groupTitle" placeholder="e.g. Spring Classic Auction - Lot 12" />
+
+    <div class="group-auction-fields row" style="margin-top:10px; gap:10px;">
+        <div>
+            <label>Auction End (local)</label>
+            <input id="groupEndTime" type="datetime-local" />
+        </div>
+    </div>
 
     <div id="formsRoot" class="forms-root"></div>
 
     <div class="actions">
-        <button id="addBtn" class="btn">Add another</button>
-        <button id="submitBtn" class="btn">Submit all listings</button>
+        <button id="addBtn" class="btn">Add another vehicle</button>
+        <button id="submitBtn" class="btn">Create Auction Group</button>
     </div>
 
     <div id="status" class="status"></div>
 </section>
 
-<script src="/js/listings-create.js"></script>
+<script src="~/js/listings-create.js" asp-append-version="true"></script>

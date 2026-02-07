@@ -29,6 +29,7 @@ namespace LastCallMotorAuctions.API.Controllers
         }
 
         [HttpGet("/Auctions/End/{id:int}")]
+        [HttpPost("/Auctions/End/{id:int}")]
         [Authorize(Roles = "Seller")]
         public async Task<IActionResult> End(int id)
         {
@@ -37,19 +38,55 @@ namespace LastCallMotorAuctions.API.Controllers
             if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
                 return Forbid();
 
-            var auction = await _db.Auctions
+            var now = DateTime.UtcNow;
+
+            // First, try to find an auction group with this ID and end all its auctions
+            try
+            {
+                var groupJoins = await _db.AuctionGroupAuctions
+                    .Where(aga => aga.AuctionGroupId == id)
+                    .ToListAsync();
+
+                if (groupJoins.Count > 0)
+                {
+                    var auctionIds = groupJoins.Select(j => j.AuctionId).ToList();
+                    var auctions = await _db.Auctions
+                        .Include(a => a.Listing)
+                        .Where(a => auctionIds.Contains(a.AuctionId))
+                        .ToListAsync();
+
+                    // Verify all auctions belong to this seller
+                    if (auctions.Any(a => a.Listing == null || a.Listing.SellerId != userId))
+                        return Forbid();
+
+                    foreach (var auction in auctions.Where(a => a.EndTime > now || a.StatusId == 2))
+                    {
+                        auction.EndTime = now;
+                        auction.StatusId = 3; // Ended
+                    }
+
+                    await _db.SaveChangesAsync();
+                    return RedirectToAction("Dashboard", "Seller");
+                }
+            }
+            catch
+            {
+                // AuctionGroup tables may not exist; fall through to single-auction lookup
+            }
+
+            // Fall back to ending a single auction by its AuctionId
+            var singleAuction = await _db.Auctions
                 .Include(a => a.Listing)
                 .FirstOrDefaultAsync(a => a.AuctionId == id);
 
-            if (auction == null)
+            if (singleAuction == null)
                 return NotFound();
 
-            if (auction.Listing == null || auction.Listing.SellerId != userId)
+            if (singleAuction.Listing == null || singleAuction.Listing.SellerId != userId)
                 return Forbid();
 
-            // End auction now
-            auction.EndTime = DateTime.UtcNow;
-            auction.StatusId = 3; // Ended
+            singleAuction.EndTime = now;
+            singleAuction.StatusId = 3; // Ended
 
             await _db.SaveChangesAsync();
 

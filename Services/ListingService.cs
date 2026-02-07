@@ -10,14 +10,34 @@ namespace LastCallMotorAuctions.API.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ListingService> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public ListingService(ApplicationDbContext context, ILogger<ListingService> logger)
+        private static readonly HashSet<string> AllowedPhotoExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".webp"
+        };
+
+        public ListingService(ApplicationDbContext context, ILogger<ListingService> logger, IWebHostEnvironment env)
         {
             _context = context;
             _logger = logger;
+            _env = env;
         }
 
-        private static ListingResponseDto MapToListingResponseDto(Listing l)
+        private List<string> GetPhotoUrlsForListing(int listingId)
+        {
+            var uploadDir = Path.Combine(_env.WebRootPath ?? "", "uploads", "listings", listingId.ToString());
+            if (!Directory.Exists(uploadDir))
+                return new List<string>();
+
+            return Directory.GetFiles(uploadDir)
+                .Where(f => AllowedPhotoExtensions.Contains(Path.GetExtension(f)))
+                .OrderBy(f => f)
+                .Select(f => $"/uploads/listings/{listingId}/{Path.GetFileName(f)}")
+                .ToList();
+        }
+
+        private ListingResponseDto MapToListingResponseDto(Listing l)
         {
             return new ListingResponseDto
             {
@@ -38,7 +58,9 @@ namespace LastCallMotorAuctions.API.Services
                 City = l.Location?.City,
                 Region = l.Location?.Region,
                 Country = l.Location?.Country,
-                PostalCode = l.Location?.PostalCode
+                PostalCode = l.Location?.PostalCode,
+
+                PhotoUrls = GetPhotoUrlsForListing(l.ListingId)
             };
         }
 
@@ -71,87 +93,136 @@ namespace LastCallMotorAuctions.API.Services
             return list.Select(MapToListingResponseDto).ToList();
         }
 
-        public async Task<ListingResponseDto> CreateListingAsync(CreateListingDto dto, int sellerId)
+        public async Task<List<ListingResponseDto>> CreateListingAsync(CreateListingDto dto, int sellerId)
         {
-            // Validate Model belongs to Make
-            var model = await _context.VehicleModels.FindAsync(dto.ModelId);
-            if (model == null)
-                throw new ArgumentException("Invalid ModelId.");
-            if (model.MakeId != dto.MakeId)
-                throw new ArgumentException("Model does not belong to the selected Make.");
+            if (dto.Vehicles == null || dto.Vehicles.Count == 0)
+                throw new ArgumentException("At least one vehicle is required.");
 
-            // Find or create Locatoin
-            var region = string.IsNullOrWhiteSpace(dto.Region) ? null : dto.Region.Trim();
-            var postalCode = string.IsNullOrWhiteSpace(dto.PostalCode) ? null : dto.PostalCode.Trim();
-
-            var location = await _context.Locations
-                .FirstOrDefaultAsync(l =>
-                l.City == dto.City.Trim() &&
-                l.Country == dto.Country.Trim() &&
-                l.Region == region &&
-                l.PostalCode == postalCode);
-
-            if (location == null)
+            // If group title provided, create group
+            AuctionGroup? group = null;
+            if (!string.IsNullOrWhiteSpace(dto.AuctionGroupTitle))
             {
-                location = new Location
+                group = new AuctionGroup { Title = dto.AuctionGroupTitle.Trim() };
+                _context.AuctionGroups.Add(group);
+                try
                 {
-                    City = dto.City.Trim(),
-                    Region = region,
-                    Country = dto.Country.Trim(),
-                    PostalCode = postalCode
-                };
-                _context.Locations.Add(location);
-                await _context.SaveChangesAsync();
+                    await _context.SaveChangesAsync();
+                }
+                catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+                {
+                    // If the AuctionGroups table doesn't exist (migrations not applied), log and continue without grouping
+                    _logger.LogWarning(ex, "Failed to create AuctionGroup (table may not exist). Continuing without group.");
+                    // Detach the entity to avoid tracking issues
+                    _context.Entry(group).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+                    group = null;
+                }
             }
 
-            // Create and Save Listing
-            var listing = new Listing
+            var createdListings = new List<ListingResponseDto>();
+
+            // If a group EndTime is provided, compute group start and validate once
+            DateTime? groupStartUtc = null;
+            DateTime? groupEndUtc = null;
+            if (dto.EndTime.HasValue)
             {
-                SellerId = sellerId,
-                Title = dto.Title,
-                Description = dto.Description,
-                Year = dto.Year,
-                MakeId = dto.MakeId,
-                ModelId = dto.ModelId,
-                Vin = dto.Vin,
-                Mileage = dto.Mileage,
-                ConditionGrade = dto.ConditionGrade,
-                LocationId = location.LocationId,
-                StatusId = 1
-            };
-
-            _context.Listings.Add(listing);
-            await _context.SaveChangesAsync();
-
-            // If auction fields provided, create Auction record and mark active
-            if (dto.StartPrice.HasValue && dto.EndTime.HasValue)
-            {
-                // Ensure end time is in the future and after start time
-                var startTime = DateTime.UtcNow;
-                var endTimeUtc = dto.EndTime.Value.ToUniversalTime();
-
-                // Require a small buffer to avoid race conditions
-                if (endTimeUtc <= startTime.AddMinutes(1))
+                groupStartUtc = DateTime.UtcNow;
+                groupEndUtc = dto.EndTime.Value.ToUniversalTime();
+                if (groupEndUtc <= groupStartUtc.Value.AddMinutes(1))
                     throw new ArgumentException("Auction end time must be at least 1 minute in the future.");
 
-                var auction = new Auction
-                {
-                    ListingId = listing.ListingId,
-                    StartPrice = dto.StartPrice.Value,
-                    ReservePrice = dto.ReservePrice,
-                    StartTime = startTime,
-                    EndTime = endTimeUtc,
-                    StatusId = 2 // Active
-                };
-                _context.Auctions.Add(auction);
-                await _context.SaveChangesAsync();
-
-                // Optionally set listing status to Active
-                listing.StatusId = 2; // Active
-                await _context.SaveChangesAsync();
+                _logger.LogInformation("Creating auction group '{Title}' with StartUtc={StartUtc:o} EndUtc={EndUtc:o}", dto.AuctionGroupTitle ?? "(none)", groupStartUtc.Value, groupEndUtc.Value);
             }
 
-            return MapToListingResponseDto(listing);
+            try
+            {
+                foreach (var vehicle in dto.Vehicles)
+                {
+                    // Validate model
+                    var model = await _context.VehicleModels.FindAsync(vehicle.ModelId);
+                    if (model == null) throw new ArgumentException("Invalid ModelId.");
+                    if (model.MakeId != vehicle.MakeId) throw new ArgumentException("Model does not belong to the selected Make.");
+
+                    // Use placeholder location for now (seller must provide location?) Keep simple: use a default location or require inputs later
+                    var defaultLocation = await _context.Locations.FirstOrDefaultAsync();
+                    if (defaultLocation == null)
+                    {
+                        defaultLocation = new Location { City = "Unknown", Country = "Unknown" };
+                        _context.Locations.Add(defaultLocation);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    var listing = new Listing
+                    {
+                        SellerId = sellerId,
+                        Title = vehicle.Title,
+                        Description = vehicle.Description,
+                        Year = vehicle.Year,
+                        MakeId = vehicle.MakeId,
+                        ModelId = vehicle.ModelId,
+                        Vin = vehicle.Vin,
+                        Mileage = vehicle.Mileage,
+                        ConditionGrade = vehicle.ConditionGrade,
+                        LocationId = defaultLocation.LocationId,
+                        StatusId = 1
+                    };
+
+                    _context.Listings.Add(listing);
+                    await _context.SaveChangesAsync();
+
+                    // Create auction for each listing if group EndTime provided
+                    if (groupEndUtc.HasValue && groupStartUtc.HasValue)
+                    {
+                        var startTime = groupStartUtc.Value;
+                        var endTimeUtc = groupEndUtc.Value;
+
+                        var auction = new Auction
+                        {
+                            ListingId = listing.ListingId,
+                            StartPrice = vehicle.StartPrice,
+                            ReservePrice = vehicle.ReservePrice,
+                            StartTime = startTime,
+                            EndTime = endTimeUtc,
+                            // set status depending on whether endTime is in the future relative to the group start
+                            StatusId = (byte)(endTimeUtc > startTime ? 2 : 3)
+                        };
+                        _context.Auctions.Add(auction);
+                        await _context.SaveChangesAsync();
+
+                        _logger.LogInformation("Created Auction {AuctionId} for Listing {ListingId}: Start={Start:o} End={End:o} Status={Status}", auction.AuctionId, listing.ListingId, auction.StartTime, auction.EndTime, auction.StatusId);
+                        if (auction.StatusId == 3)
+                        {
+                            _logger.LogWarning("Auction {AuctionId} was created with Status=Ended because EndTime <= StartTime; Start={Start:o} End={End:o}", auction.AuctionId, auction.StartTime, auction.EndTime);
+                        }
+
+                        if (group != null)
+                        {
+                            try
+                            {
+                                _context.AuctionGroupAuctions.Add(new AuctionGroupAuction { AuctionGroupId = group.AuctionGroupId, AuctionId = auction.AuctionId });
+                                await _context.SaveChangesAsync();
+                            }
+                            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+                            {
+                                // If linking failed because the table doesn't exist, log and continue
+                                _logger.LogWarning(ex, "Failed to link Auction to AuctionGroup (table may not exist). Continuing without group link.");
+                            }
+                        }
+
+                        // set listing status to match auction status
+                        listing.StatusId = (byte)(endTimeUtc > startTime ? 2 : 3);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    createdListings.Add(MapToListingResponseDto(listing));
+                }
+
+                return createdListings;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating listings/auctions");
+                throw;
+            }
         }
 
         public async Task<ListingResponseDto?> UpdateListingAsync(int lisitngId, UpdateListingDto dto, int userId)

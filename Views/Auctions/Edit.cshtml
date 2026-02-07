@@ -54,6 +54,13 @@
                     </div>
                 </div>
 
+                <h3>Photos</h3>
+                <div id="existingPhotos" class="photo-preview-grid"></div>
+                <div class="photo-upload-area">
+                    <input type="file" id="newPhotos" multiple accept=".jpg,.jpeg,.png,.webp" />
+                    <div class="upload-text"><strong>Click or drag</strong> to add photos (.jpg, .png, .webp)</div>
+                </div>
+
                 <h3>Location</h3>
                 <label>City</label>
                 <input name="city" required />
@@ -83,7 +90,7 @@
                 <label>Auction End (local)</label>
                 <input name="endTime" type="datetime-local" />
 
-                <div style="margin-top:12px; display:flex; gap:8px;">
+                <div class="actions">
                     <button id="saveBtn" class="btn">Save all changes</button>
                     <a class="btn btn-outline" href="/Seller/Dashboard">Cancel</a>
                 </div>

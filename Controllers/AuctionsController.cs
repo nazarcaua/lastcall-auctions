@@ -33,6 +33,29 @@ namespace LastCallMotorAuctions.API.Controllers
             return Ok(list);
         }
 
+        /// Debug: return recent raw auctions (includes StatusId, StartTime, EndTime)
+        [HttpGet("debug/recent")]
+        public async Task<IActionResult> GetRecentAuctionsDebug()
+        {
+            var recent = await _db.Auctions
+                .AsNoTracking()
+                .OrderByDescending(a => a.AuctionId)
+                .Take(50)
+                .Select(a => new
+                {
+                    a.AuctionId,
+                    a.ListingId,
+                    a.StartPrice,
+                    a.ReservePrice,
+                    a.StartTime,
+                    a.EndTime,
+                    a.StatusId
+                })
+                .ToListAsync();
+
+            return Ok(recent);
+        }
+
         /// Get a single auction by ID (for detail page).
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetAuction(int id)

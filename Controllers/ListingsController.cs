@@ -41,7 +41,7 @@ public class ListingsController : Controller
         try
         {
             var result = await _listingService.CreateListingAsync(dto, sellerId);
-            return CreatedAtAction(nameof(GetHashCode), new { id = result.ListingId }, result);
+            return Ok(result);
         }
 
         catch (ArgumentException ex)
@@ -128,4 +128,106 @@ public class ListingsController : Controller
         return NoContent();
     }
 
+    // =====================
+    // Photo upload endpoints
+    // =====================
+
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".png", ".webp"
+    };
+
+    private const long MaxFileSize = 5 * 1024 * 1024; // 5 MB
+    private const int MaxPhotosPerListing = 10;
+
+    [HttpPost("{id:int}/photos")]
+    [Authorize]
+    [RequestSizeLimit(52_428_800)] // 50 MB total request limit
+    public async Task<IActionResult> UploadPhotos(int id, [FromForm] List<IFormFile> photos)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        // Verify listing exists and belongs to user
+        var listing = await _listingService.GetListingByIdAsync(id);
+        if (listing == null || listing.SellerId != userId.Value)
+            return NotFound(new { message = "Listing not found or access denied." });
+
+        if (photos == null || photos.Count == 0)
+            return BadRequest(new { message = "No photos provided." });
+
+        var uploadDir = Path.Combine(_env.WebRootPath, "uploads", "listings", id.ToString());
+
+        // Count existing photos
+        var existingCount = 0;
+        if (Directory.Exists(uploadDir))
+            existingCount = Directory.GetFiles(uploadDir).Length;
+
+        if (existingCount + photos.Count > MaxPhotosPerListing)
+            return BadRequest(new { message = $"Maximum {MaxPhotosPerListing} photos per listing. Currently {existingCount} uploaded." });
+
+        Directory.CreateDirectory(uploadDir);
+
+        var uploaded = new List<string>();
+
+        foreach (var photo in photos)
+        {
+            if (photo.Length == 0) continue;
+            if (photo.Length > MaxFileSize)
+                return BadRequest(new { message = $"File '{photo.FileName}' exceeds the 5 MB limit." });
+
+            var ext = Path.GetExtension(photo.FileName);
+            if (!AllowedExtensions.Contains(ext))
+                return BadRequest(new { message = $"File type '{ext}' is not allowed. Use .jpg, .jpeg, .png, or .webp." });
+
+            var fileName = $"{Guid.NewGuid():N}{ext}";
+            var filePath = Path.Combine(uploadDir, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await photo.CopyToAsync(stream);
+            }
+
+            uploaded.Add($"/uploads/listings/{id}/{fileName}");
+        }
+
+        return Ok(new { message = $"{uploaded.Count} photo(s) uploaded.", urls = uploaded });
+    }
+
+    [HttpGet("{id:int}/photos")]
+    public IActionResult GetPhotos(int id)
+    {
+        var uploadDir = Path.Combine(_env.WebRootPath, "uploads", "listings", id.ToString());
+
+        if (!Directory.Exists(uploadDir))
+            return Ok(new { urls = Array.Empty<string>() });
+
+        var urls = Directory.GetFiles(uploadDir)
+            .Where(f => AllowedExtensions.Contains(Path.GetExtension(f)))
+            .OrderBy(f => f)
+            .Select(f => $"/uploads/listings/{id}/{Path.GetFileName(f)}")
+            .ToList();
+
+        return Ok(new { urls });
+    }
+
+    [HttpDelete("{id:int}/photos/{fileName}")]
+    [Authorize]
+    public async Task<IActionResult> DeletePhoto(int id, string fileName)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        var listing = await _listingService.GetListingByIdAsync(id);
+        if (listing == null || listing.SellerId != userId.Value)
+            return NotFound(new { message = "Listing not found or access denied." });
+
+        var filePath = Path.Combine(_env.WebRootPath, "uploads", "listings", id.ToString(), fileName);
+
+        if (!System.IO.File.Exists(filePath))
+            return NotFound(new { message = "Photo not found." });
+
+        System.IO.File.Delete(filePath);
+        return Ok(new { message = "Photo deleted." });
+    }
 }

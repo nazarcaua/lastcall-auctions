@@ -9,5 +9,6 @@ namespace LastCallMotorAuctions.API.Services
         Task<List<AuctionBrowseDto>> GetActiveAuctionAsync();
         Task<BidResponseDto> PlaceBidAsync(PlaceBidDto placeBidDto, int userId);
         Task<bool> IsAuctionActiveAsync(int auctionId);
+        Task<AuctionGroupDetailDto?> GetAuctionGroupByIdAsync(int groupId);
     }
 }
