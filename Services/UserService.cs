@@ -63,13 +63,23 @@ namespace LastCallMotorAuctions.API.Services
                 throw new InvalidOperationException("Failed to assign Buyer role to user.");
             }
 
-            // Generate JWT Token
-            var token = await GenerateJwtToken(user);
+            // Generate JWT Token (wrap in try/catch so registration still succeeds if token generation fails)
+            string token;
+            try
+            {
+                token = await GenerateJwtToken(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate JWT token for user {UserId}", user.Id);
+                token = string.Empty;
+            }
+
             var expiryMinutes = _configuration.GetValue<int>("JWT:ExpiryMinutes", 60);
 
             return new AuthResponseDto
             {
-                Token = token,
+                Token = token ?? string.Empty,
                 User = new UserResponseDto
                 {
                     UserId = user.Id,
@@ -116,14 +126,24 @@ namespace LastCallMotorAuctions.API.Services
             // Sign in with cookie for MVC views
             await _signInManager.SignInAsync(user, isPersistent: true);
 
-            // Generate JWT Token
-            var token = await GenerateJwtToken(user);
+            // Generate JWT Token (wrap in try/catch to avoid failing login if token generation has an issue)
+            string token;
+            try
+            {
+                token = await GenerateJwtToken(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate JWT token for user {UserId} during login", user.Id);
+                token = string.Empty;
+            }
+
             var expiryMinutes = _configuration.GetValue<int>("JWT:ExpiryMinutes", 60);
             var roles = await _userManager.GetRolesAsync(user);
 
             return new AuthResponseDto
             {
-                Token = token,
+                Token = token ?? string.Empty,
                 User = new UserResponseDto
                 {
                     UserId = user.Id,

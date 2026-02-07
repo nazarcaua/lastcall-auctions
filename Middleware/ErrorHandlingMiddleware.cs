@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 
 namespace LastCallMotorAuctions.API.Middleware;
 
@@ -8,11 +9,13 @@ public class ErrorHandlingMiddleware
 
     private readonly RequestDelegate _next;
     private readonly ILogger<ErrorHandlingMiddleware> _logger;
+    private readonly IWebHostEnvironment _env;
 
-    public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
+    public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger, IWebHostEnvironment env)
     {
         _next = next;
         _logger = logger;
+        _env = env;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -28,42 +31,53 @@ public class ErrorHandlingMiddleware
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
 
-        var response = new
-        {
-            message = "An error has occured while processing your request.",
-            statusCode = (int)HttpStatusCode.InternalServerError
-        };
+        var statusCode = HttpStatusCode.InternalServerError;
+        var message = "An error has occured while processing your request.";
 
         // Handling specific exception types
         switch (exception)
         {
             case ArgumentException argEx:
-                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                response = new
-                {
-                    message = argEx.Message,
-                    statusCode = (int)HttpStatusCode.BadRequest
-                };
+                statusCode = HttpStatusCode.BadRequest;
+                message = argEx.Message;
                 break;
 
             case UnauthorizedAccessException:
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                response = new
-                {
-                    message = "Unauthorized access.",
-                    statusCode = (int)HttpStatusCode.Unauthorized
-                };
+                statusCode = HttpStatusCode.Unauthorized;
+                message = "Unauthorized access.";
                 break;
 
             default:
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                statusCode = HttpStatusCode.InternalServerError;
                 break;
         }
 
+        object response;
+        if (_env.IsDevelopment())
+        {
+            // Include detailed exception information in development for debugging
+            response = new
+            {
+                message,
+                statusCode = (int)statusCode,
+                exception = exception.GetType().FullName,
+                details = exception.ToString()
+            };
+        }
+        else
+        {
+            response = new
+            {
+                message,
+                statusCode = (int)statusCode
+            };
+        }
+
+        context.Response.StatusCode = (int)statusCode;
         var jsonResponse = JsonSerializer.Serialize(response);
         return context.Response.WriteAsync(jsonResponse);
     }

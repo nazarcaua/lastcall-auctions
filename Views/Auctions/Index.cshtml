@@ -1,4 +1,5 @@
-﻿@{
+﻿@model IEnumerable<LastCallMotorAuctions.API.DTOs.AuctionBrowseDto>
+@{
     Layout = "_Layout";
     ViewData["Title"] = "Auctions";
 }
@@ -6,37 +7,38 @@
 <section class="page">
     <h1>Browse Auctions</h1>
 
-    <p class="muted">
-        This is a frontend-only placeholder. Real listings will appear here once the backend is wired.
-    </p>
+    @if (Model == null || !Model.Any())
+    {
+        <p class="muted">No active auctions found.</p>
+    }
+    else
+    {
+        var grouped = Model.GroupBy(a => a.AuctionGroupId ?? a.AuctionId).ToList();
+        <div class="grid">
+            @foreach (var group in grouped)
+            {
+                var first = group.First();
+                var title = first.AuctionGroupTitle ?? first.Title;
+                var ends = group.Min(a => a.EndTime);
+                var firstPhoto = group.SelectMany(a => a.PhotoUrls).FirstOrDefault();
 
-    <div class="grid">
-        <article class="card">
-            <h3>2018 Honda Civic Touring</h3>
-            <p>Timed auction • Ends in 2h 15m</p>
-            <p><strong>Current bid:</strong> $12,400</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-
-        <article class="card">
-            <h3>2016 Ford F-150 XLT</h3>
-            <p>Timed auction • Ends in 5h 40m</p>
-            <p><strong>Current bid:</strong> $18,950</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-
-        <article class="card">
-            <h3>2020 Toyota Corolla SE</h3>
-            <p>Instant buy • Available now</p>
-            <p><strong>Buy now:</strong> $16,200</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-
-        <article class="card">
-            <h3>2014 BMW 328i</h3>
-            <p>Timed auction • Ends tomorrow</p>
-            <p><strong>Current bid:</strong> $9,750</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-    </div>
+                <article class="card">
+                    @if (firstPhoto != null)
+                    {
+                        <img class="card-photo" src="@firstPhoto" alt="@title" />
+                    }
+                    else
+                    {
+                        <div class="card-photo-placeholder">No photos</div>
+                    }
+                    <div class="card-body">
+                        <h3>@title</h3>
+                        <p>@(group.Count() == 1 ? $"{first.Year} {first.MakeName} {first.ModelName}" : $"{group.Count()} vehicles")</p>
+                        <p>@(ends > DateTime.UtcNow ? $"Ends {ends.ToLocalTime():g}" : "Ended")</p>
+                        <a class="btn small" href="/Browse/Detail/@(group.Key)">View auction</a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
 </section>

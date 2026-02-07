@@ -27,6 +27,10 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     public DbSet<Payment> Payments { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
 
+    // New grouping
+    public DbSet<AuctionGroup> AuctionGroups { get; set; } = null!;
+    public DbSet<AuctionGroupAuction> AuctionGroupAuctions { get; set; } = null!;
+
     // Lookup tables
     public DbSet<UserStatus> UserStatuses { get; set; } = null!;
     public DbSet<ListingStatus> ListingStatuses { get; set; } = null!;
@@ -263,6 +267,20 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
             b.HasCheckConstraint("CK_Notifications_OneLink",
                 "(CASE WHEN AuctionId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN ListingId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN BidId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN PaymentId IS NULL THEN 0 ELSE 1 END) <= 1");
             b.HasIndex(x => new { x.UserId, x.CreatedAt });
+        });
+
+        // AuctionGroup
+        modelBuilder.Entity<AuctionGroup>(b =>
+        {
+            b.HasKey(ag => ag.AuctionGroupId);
+            b.Property(ag => ag.Title).HasMaxLength(200).IsRequired();
+        });
+
+        modelBuilder.Entity<AuctionGroupAuction>(b =>
+        {
+            b.HasKey(x => new { x.AuctionGroupId, x.AuctionId });
+            b.HasOne(x => x.AuctionGroup).WithMany(ag => ag.Auctions).HasForeignKey(x => x.AuctionGroupId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Auction).WithMany().HasForeignKey(x => x.AuctionId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

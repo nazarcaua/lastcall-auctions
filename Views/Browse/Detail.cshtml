@@ -1,0 +1,79 @@
+@model LastCallMotorAuctions.API.DTOs.AuctionGroupDetailDto
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Title;
+    var now = DateTime.UtcNow;
+}
+
+<section class="page">
+    <a class="back-link" href="/Browse">&larr; Back to auctions</a>
+
+    <h1>@Model.Title</h1>
+    <p class="muted">@Model.Auctions.Count vehicle@(Model.Auctions.Count != 1 ? "s" : "") in this auction.</p>
+
+    <div class="vehicle-list">
+        @foreach (var a in Model.Auctions)
+        {
+            var timeLeft = a.EndTime - now;
+            var timeLeftText = timeLeft.TotalSeconds <= 0
+                ? "Ended"
+                : $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h {timeLeft.Minutes}m";
+
+            <div class="vehicle-card">
+                @if (a.PhotoUrls != null && a.PhotoUrls.Count > 0)
+                {
+                    <div class="vehicle-photos @(a.PhotoUrls.Count == 1 ? "vehicle-photos-single" : "")">
+                        @foreach (var url in a.PhotoUrls)
+                        {
+                            <img src="@url" alt="@a.Year @a.MakeName @a.ModelName" />
+                        }
+                    </div>
+                }
+
+                <div class="vehicle-card-content">
+                    <div class="vehicle-header">
+                        <h2>@a.Year @a.MakeName @a.ModelName</h2>
+                        <span class="badge @(a.EndTime > now ? "active" : "ended")">
+                            @(a.StatusName ?? (a.EndTime > now ? "Active" : "Ended"))
+                        </span>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(a.Title))
+                    {
+                        <p class="vehicle-title">@a.Title</p>
+                    }
+
+                    <div class="vehicle-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Start Price</span>
+                            <span class="detail-value">@string.Format("{0:C}", a.StartPrice)</span>
+                        </div>
+
+                        @if (a.ReservePrice.HasValue)
+                        {
+                            <div class="detail-row">
+                                <span class="detail-label">Reserve</span>
+                                <span class="detail-value">@string.Format("{0:C}", a.ReservePrice.Value)</span>
+                            </div>
+                        }
+
+                        <div class="detail-row">
+                            <span class="detail-label">Current Bid</span>
+                            <span class="detail-value">@(a.CurrentBid.HasValue ? string.Format("{0:C}", a.CurrentBid.Value) : "No bids yet")</span>
+                        </div>
+
+                        <div class="detail-row">
+                            <span class="detail-label">Ends</span>
+                            <span class="detail-value">@a.EndTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</span>
+                        </div>
+
+                        <div class="detail-row">
+                            <span class="detail-label">Time Left</span>
+                            <span class="detail-value">@timeLeftText</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>

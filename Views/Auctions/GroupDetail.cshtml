@@ -1,0 +1,21 @@
+@model LastCallMotorAuctions.API.DTOs.AuctionGroupDetailDto
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="page">
+    <h1>@Model.Title</h1>
+    <p class="muted">@Model.Auctions.Count() vehicles in this auction group.</p>
+
+    @foreach (var a in Model.Auctions)
+    {
+        <div class="card" style="margin-bottom:10px;">
+            <h3>@a.Title (@a.Year)</h3>
+            <p>@a.MakeName @a.ModelName</p>
+            <p>Start price: @string.Format("{0:C}", a.StartPrice)</p>
+            <p>Ends: @a.EndTime.ToLocalTime().ToString("g")</p>
+            <a class="btn" href="/Browse/Detail/@a.AuctionId">View</a>
+        </div>
+    }
+</section>

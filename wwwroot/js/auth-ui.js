@@ -35,6 +35,7 @@
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: 'include', // ensure authentication cookie set by server is stored
             body: JSON.stringify(payload)
         });
 
@@ -49,13 +50,8 @@
         localStorage.setItem("authToken", result.token);
         localStorage.setItem("authUser", JSON.stringify(result.user));
 
-        // Redirect after success - go to seller dashboard if seller, otherwise home
-        const roles = result.user.roles || [];
-        if (roles.includes("Seller")) {
-            window.location.href = "/Seller/Dashboard";
-        } else {
-            window.location.href = "/";
-        }
+        // Redirect after success -> always go to home page
+        window.location.href = "/";
     } catch (error) {
         console.error("Auth error:", error);
         alert("Network or server error. Please try again.");
