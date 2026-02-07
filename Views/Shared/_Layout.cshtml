@@ -9,16 +9,24 @@
 <body>
 
     <nav class="navbar">
-        <a class="brand" href="/">LastCall</a>
+        <div class="nav-left">
+            <a class="brand" href="/">LastCall</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/Auctions">Auctions</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    @if (User.IsInRole("Seller"))
+                    {
+                        <a href="/Seller/Dashboard">Seller Dashboard</a>
+                    }
+                }
+            </div>
+        </div>
 
-        <div class="nav-links">
-            <a href="/">Home</a>
+        <div class="nav-right">
             @if (User.Identity?.IsAuthenticated == true)
             {
-                @if (User.IsInRole("Seller"))
-                {
-                    <a href="/Seller/Dashboard">Seller Dashboard</a>
-                }
                 <span class="nav-user">@User.Identity.Name</span>
                 <a href="/Auth/Logout">Logout</a>
             }

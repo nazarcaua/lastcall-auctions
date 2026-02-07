@@ -1,4 +1,5 @@
-﻿@{
+﻿@model IEnumerable<LastCallMotorAuctions.API.DTOs.AuctionBrowseDto>
+@{
     Layout = "_Layout";
     ViewData["Title"] = "Auctions";
 }
@@ -6,37 +7,26 @@
 <section class="page">
     <h1>Browse Auctions</h1>
 
-    <p class="muted">
-        This is a frontend-only placeholder. Real listings will appear here once the backend is wired.
-    </p>
-
-    <div class="grid">
-        <article class="card">
-            <h3>2018 Honda Civic Touring</h3>
-            <p>Timed auction • Ends in 2h 15m</p>
-            <p><strong>Current bid:</strong> $12,400</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-
-        <article class="card">
-            <h3>2016 Ford F-150 XLT</h3>
-            <p>Timed auction • Ends in 5h 40m</p>
-            <p><strong>Current bid:</strong> $18,950</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-
-        <article class="card">
-            <h3>2020 Toyota Corolla SE</h3>
-            <p>Instant buy • Available now</p>
-            <p><strong>Buy now:</strong> $16,200</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-
-        <article class="card">
-            <h3>2014 BMW 328i</h3>
-            <p>Timed auction • Ends tomorrow</p>
-            <p><strong>Current bid:</strong> $9,750</p>
-            <a class="btn small" href="#">View listing</a>
-        </article>
-    </div>
+    @if (Model == null || !Model.Any())
+    {
+        <p class="muted">No active auctions found.</p>
+    }
+    else
+    {
+        <div class="grid">
+            @foreach (var auction in Model)
+            {
+                var listingTitle = auction.Title ?? "Listing";
+                var makeModel = string.Join(" ", new[] { auction.MakeName, auction.ModelName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                var displayPrice = auction.CurrentBid.HasValue ? string.Format("{0:C}", auction.CurrentBid.Value) : string.Format("{0:C}", auction.StartPrice);
+                <article class="card">
+                    <h3>@listingTitle (@auction.Year)</h3>
+                    <p>@makeModel</p>
+                    <p>@(auction.EndTime > DateTime.UtcNow ? $"Ends {auction.EndTime.ToLocalTime():g}" : "Ended")</p>
+                    <p><strong>@(auction.CurrentBid.HasValue ? "Current bid:" : "Start price:")</strong> @displayPrice</p>
+                    <a class="btn small" href="/Browse/Detail/@auction.AuctionId">View listing</a>
+                </article>
+            }
+        </div>
+    }
 </section>

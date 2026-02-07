@@ -8,19 +8,40 @@
     align-items: center;
     padding: 14px 32px;
     background-color: #111;
-    gap: 24px; /* space between brand and links */
+    gap: 24px;
+    justify-content: space-between;
 }
 
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
 
     .navbar a {
         color: white;
         text-decoration: none;
-        margin-left: 16px;
     }
 
         .navbar a:hover {
             text-decoration: underline;
         }
+
+.nav-user {
+    color: #87CEEB;
+}
 
 .brand {
     font-weight: bold;
@@ -76,5 +97,81 @@ main {
     margin-top: 22px;
     color: #666;
     font-size: 0.95rem;
+}
+
+.create-listings-page .forms-root {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.listing-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.listing-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.listing-card .card-header h3 {
+    margin: 0;
+}
+
+.listing-card .card-body {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.listing-card label {
+    font-size: 13px;
+    opacity: 0.8;
+    display: block;
+}
+
+.listing-card input,
+.listing-card select,
+.listing-card textarea {
+    padding: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    width: 100%;
+}
+
+.listing-card .row {
+    display: flex;
+    gap: 10px;
+}
+
+.listing-card .row>div {
+    flex: 1;
+}
+
+.actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.status {
+    margin-top: 12px;
+    font-weight: 600;
+}
+
+.status.error {
+    color: #b00020;
+}
+
+@media (max-width: 800px) {
+    .listing-card .row {
+        flex-direction: column;
+    }
 }
 

@@ -6,7 +6,7 @@ namespace LastCallMotorAuctions.API.DTOs
     {
         [Required]
         [StringLength(120, MinimumLength = 1)]
-        public string Title { get; set; } = null;
+        public string Title { get; set; } = null!;
 
         public string? Description { get; set; }
 
@@ -39,9 +39,19 @@ namespace LastCallMotorAuctions.API.DTOs
 
         [Required]
         [StringLength(80)]
-        public string Country { get; set; } = null;
+        public string Country { get; set; } = null!;
 
         [StringLength(20)]
         public string? PostalCode { get; set; }
+
+        // Auction fields (optional) - if provided an auction will be created for this listing
+        [Range(0, double.MaxValue)]
+        public decimal? StartPrice { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal? ReservePrice { get; set; }
+
+        // End time for the auction in UTC expected from client or local datetime converted by server
+        public DateTime? EndTime { get; set; }
     }
 }

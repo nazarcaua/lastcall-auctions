@@ -33,7 +33,12 @@ namespace LastCallMotorAuctions.API.Services
                 ConditionGrade = l.ConditionGrade,
                 LocationId = l.LocationId,
                 StatusId = l.StatusId,
-                CreatedAt = l.CreatedAt
+                CreatedAt = l.CreatedAt,
+
+                City = l.Location?.City,
+                Region = l.Location?.Region,
+                Country = l.Location?.Country,
+                PostalCode = l.Location?.PostalCode
             };
         }
 
@@ -72,7 +77,7 @@ namespace LastCallMotorAuctions.API.Services
             var model = await _context.VehicleModels.FindAsync(dto.ModelId);
             if (model == null)
                 throw new ArgumentException("Invalid ModelId.");
-            if (model.MakeId != dto.MakeId) 
+            if (model.MakeId != dto.MakeId)
                 throw new ArgumentException("Model does not belong to the selected Make.");
 
             // Find or create Locatoin
@@ -112,11 +117,39 @@ namespace LastCallMotorAuctions.API.Services
                 Mileage = dto.Mileage,
                 ConditionGrade = dto.ConditionGrade,
                 LocationId = location.LocationId,
-                StatusId = 1 
+                StatusId = 1
             };
 
             _context.Listings.Add(listing);
             await _context.SaveChangesAsync();
+
+            // If auction fields provided, create Auction record and mark active
+            if (dto.StartPrice.HasValue && dto.EndTime.HasValue)
+            {
+                // Ensure end time is in the future and after start time
+                var startTime = DateTime.UtcNow;
+                var endTimeUtc = dto.EndTime.Value.ToUniversalTime();
+
+                // Require a small buffer to avoid race conditions
+                if (endTimeUtc <= startTime.AddMinutes(1))
+                    throw new ArgumentException("Auction end time must be at least 1 minute in the future.");
+
+                var auction = new Auction
+                {
+                    ListingId = listing.ListingId,
+                    StartPrice = dto.StartPrice.Value,
+                    ReservePrice = dto.ReservePrice,
+                    StartTime = startTime,
+                    EndTime = endTimeUtc,
+                    StatusId = 2 // Active
+                };
+                _context.Auctions.Add(auction);
+                await _context.SaveChangesAsync();
+
+                // Optionally set listing status to Active
+                listing.StatusId = 2; // Active
+                await _context.SaveChangesAsync();
+            }
 
             return MapToListingResponseDto(listing);
         }

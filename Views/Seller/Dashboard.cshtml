@@ -3,6 +3,7 @@
 @model SellerDashboardViewModel
 
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "Seller Dashboard";
     var now = DateTime.UtcNow;
 }
@@ -59,8 +60,6 @@
 
 <div class="dashboard-actions">
     <a class="btn" href="/Listings/Create">Create New Listing</a>
-    <a class="btn btn-outline" href="/Seller/Listings">View All Listings</a>
-    <a class="btn btn-outline" href="/Seller/Sales">Sales & Payouts</a>
 </div>
 
 <hr class="divider" />

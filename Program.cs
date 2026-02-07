@@ -147,6 +147,9 @@ var app = builder.Build();
 // =======================
 if (app.Environment.IsDevelopment())
 {
+    // Show detailed exception page during development to aid debugging
+    app.UseDeveloperExceptionPage();
+
     app.MapOpenApi();
 
     // Move OpenAPI redirect off the root URL so MVC Home page can load

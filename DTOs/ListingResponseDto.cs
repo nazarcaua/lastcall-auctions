@@ -15,5 +15,11 @@
         public int LocationId { get; set; }
         public byte StatusId { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        // Location details for edit UI
+        public string? City { get; set; }
+        public string? Region { get; set; }
+        public string? Country { get; set; }
+        public string? PostalCode { get; set; }
     }
 }

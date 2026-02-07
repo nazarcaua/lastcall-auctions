@@ -1,0 +1,20 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Listing(s)";
+}
+
+<section class="page create-listings-page">
+    <h1>Create New Listing(s)</h1>
+    <p class="muted">Add one or more vehicles. Fill required fields and click "Add another" to add more listings.</p>
+
+    <div id="formsRoot" class="forms-root"></div>
+
+    <div class="actions">
+        <button id="addBtn" class="btn">Add another</button>
+        <button id="submitBtn" class="btn">Submit all listings</button>
+    </div>
+
+    <div id="status" class="status"></div>
+</section>
+
+<script src="/js/listings-create.js"></script>
