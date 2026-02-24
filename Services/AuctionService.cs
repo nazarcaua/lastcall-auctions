@@ -213,5 +213,42 @@ namespace LastCallMotorAuctions.API.Services
 
             return new AuctionGroupDetailDto { AuctionGroupId = group.AuctionGroupId, Title = group.Title, CreatedAt = group.CreatedAt, Auctions = auctions };
         }
+
+        public async Task<BuyerDashboardViewModel> GetBuyerDashboardAsync(int buyerId)
+        {
+            // Get buyer info
+            var buyer = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == buyerId);
+            var buyerName = buyer?.Name ?? string.Empty;
+
+            // Get bids placed by buyer
+            var bids = await _context.Bids
+                .AsNoTracking()
+                .Where(b => b.BidderId == buyerId)
+                .Include(b => b.Auction)
+                .ToListAsync();
+
+            // Get auctions where buyer has placed bids
+            var auctionIds = bids.Select(b => b.AuctionId).Distinct().ToList();
+            var auctions = new List<AuctionBrowseDto>();
+            foreach (var aid in auctionIds)
+            {
+                var auctionDto = await GetAuctionByIdAsync(aid);
+                if (auctionDto != null) auctions.Add(auctionDto);
+            }
+
+            // Placeholders for favourites and transactions
+            var favourites = new List<object>();
+            var transactions = new List<object>();
+
+            return new BuyerDashboardViewModel
+            {
+                BuyerId = buyerId,
+                BuyerName = buyerName,
+                BidList = bids,
+                AuctionList = auctions,
+                Favourites = favourites,
+                Transactions = transactions
+            };
+        }
     }
 }
