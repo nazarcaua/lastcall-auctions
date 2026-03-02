@@ -36,12 +36,15 @@ namespace LastCallMotorAuctions.API.Controllers
             var pendingListingCount = await _db.Listings
                 .CountAsync(l => l.StatusId == draftStatusId);
 
+            var pendingSellerCount = await _db.SellerRequests
+                .CountAsync(r => !r.IsApproved && !r.IsRejected);
+
             var liveAuctionCount = await _db.Auctions
                 .CountAsync(a => a.StatusId == liveStatus);
 
             var dto = new AdminDashboardSummaryDto
             {
-                PendingSellerRequests = 0, // placeholder
+                PendingSellerRequests = pendingSellerCount,
                 PendingListings = pendingListingCount,
                 LiveAuctions = liveAuctionCount
             };
