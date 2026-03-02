@@ -1,9 +1,11 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using LastCallMotorAuctions.API.Data;
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace LastCallMotorAuctions.API.Services
@@ -14,17 +16,20 @@ namespace LastCallMotorAuctions.API.Services
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _configuration;
         private readonly ILogger<UserService> _logger;
+        private readonly ApplicationDbContext _db;
 
         public UserService(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             IConfiguration configuration,
-            ILogger<UserService> logger)
+            ILogger<UserService> logger,
+            ApplicationDbContext db)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _logger = logger;
+            _db = db;
         }
 
         public async Task<AuthResponseDto> RegisterAsync(CreateUserDto createUserDto)
@@ -176,10 +181,27 @@ namespace LastCallMotorAuctions.API.Services
             };
         }
 
-        public Task<bool> RequestSellerAccountAsync(int userId)
+        public async Task<bool> RequestSellerAccountAsync(int userId)
         {
-            // TODO: Implement seller account request flow (e.g., mark a flag, send notification to admin, etc.)
-            throw new NotImplementedException();
+            // If there's already a pending or approved request, do nothing
+            var existing = await _db.SellerRequests
+                .Where(r => r.UserId == userId && !r.IsRejected)
+                .FirstOrDefaultAsync();
+
+            if (existing != null)
+            {
+                return false;
+            }
+
+            var request = new SellerRequest
+            {
+                UserId = userId,
+                SubmittedAt = DateTime.UtcNow
+            };
+
+            _db.SellerRequests.Add(request);
+            await _db.SaveChangesAsync();
+            return true;
         }
 
         private async Task<string> GenerateJwtToken(User user)
