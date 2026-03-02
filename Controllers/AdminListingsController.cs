@@ -56,5 +56,49 @@ namespace LastCallMotorAuctions.API.Controllers
             return Ok (pending);
         }
 
+        [HttpPost("{id:int}/approve")]
+        public async Task<IActionResult> Approvallisting(int id)
+        {
+            var draftId = await _db.ListingStatuses
+                .Where(s => s.Name == "Draft")
+                .Select(s => s.StatusId)
+                .SingleAsync();
+
+            var activeId = await _db.ListingStatuses
+                .Where(s => s.Name == "Active")
+                .Select(s => s.StatusId)
+                .SingleAsync();
+
+            var listing = await _db.Listings.FindAsync(id);
+            if (listing == null) return NotFound(new { message = "Listing not found." });
+            if (listing.StatusId != draftId) return BadRequest(new { message = "Listing is not pending approval." });
+
+            listing.StatusId = activeId;
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Listing approved." });
+        }
+
+        [HttpPost("{id:int}/reject")]
+        public async Task<IActionResult> RejectListing(int id, [FromBody] RejectListingRequest? body = null)
+        {
+            var draftId = await _db.ListingStatuses
+                .Where(s => s.Name == "Draft")
+                .Select(s => s.StatusId)
+                .SingleAsync();
+
+            var archivedId = await _db.ListingStatuses
+                .Where(s => s.Name == "Archived")
+                .Select(s => s.StatusId)
+                .SingleAsync();
+
+            var listing = await _db.Listings.FindAsync(id);
+            if (listing == null) return NotFound(new { message = "Listing not found." });
+            if (listing.StatusId != draftId) return BadRequest(new { message = "Listing is not pending approval." });
+
+            listing.StatusId = archivedId;
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Listing rejected." });
+        }
+
     }
 }
