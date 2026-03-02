@@ -40,5 +40,43 @@ namespace LastCallMotorAuctions.API.Controllers
 
             return Ok(dto);
         }
+
+        [HttpGet("live-auctions")]
+        public async Task<ActionResult<List<AdminLiveAuctionDto>>> GetLiveAuction()
+        {
+            // StatusId for "Active" auctions
+            var activeStatusId = await _db.AuctionStatuses
+                .Where(s => s.Name == "Active")
+                .Select (s => s.StatusId)
+                .SingleAsync();
+
+            var now = DateTime.UtcNow;
+            // Last 5 mins for bid rate/active users
+            var windowStart = now.AddMinutes(-5);
+
+            var liveAuctions = await _db.Auctions
+                .Where(a => a.StatusId == activeStatusId)
+                .Select(a => new AdminLiveAuctionDto
+                {
+                    AuctionId = a.AuctionId,
+                    VehicleTitle = a.Listing!.Title,
+                    CurrentBid = _db.Bids
+                        .Where(b => b.AuctionId == a.AuctionId)
+                        .Select(b => (decimal?)b.Amount)
+                        .OrderByDescending(b => b)
+                        .FirstOrDefault() ?? a.StartPrice,
+                    ActiveUsers = _db.Bids
+                        .Where(b => b.AuctionId == a.AuctionId && b.PlacedAt >= windowStart)
+                        .Select(b => b.BidderId)
+                        .Distinct()
+                        .Count(),
+                    BidsPerMinute = (decimal)_db.Bids
+                        .Where(b => b.AuctionId == a.AuctionId && b.PlacedAt >= windowStart)
+                        .Count()
+                })
+                .ToListAsync();
+
+            return Ok(liveAuctions);
+        }
     }
 }
