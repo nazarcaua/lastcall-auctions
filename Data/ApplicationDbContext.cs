@@ -26,6 +26,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     public DbSet<AuctionResult> AuctionResults { get; set; } = null!;
     public DbSet<Payment> Payments { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
+    public DbSet<SellerRequest> SellerRequests { get; set; } = null!;
 
     // New grouping
     public DbSet<AuctionGroup> AuctionGroups { get; set; } = null!;
@@ -267,6 +268,17 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
             b.HasCheckConstraint("CK_Notifications_OneLink",
                 "(CASE WHEN AuctionId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN ListingId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN BidId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN PaymentId IS NULL THEN 0 ELSE 1 END) <= 1");
             b.HasIndex(x => new { x.UserId, x.CreatedAt });
+        });
+
+        // SellerRequest
+        modelBuilder.Entity<SellerRequest>(b =>
+        {
+            b.HasKey(x => x.SellerRequestId);
+            b.Property(x => x.SubmittedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            b.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // AuctionGroup

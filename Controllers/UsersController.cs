@@ -2,6 +2,8 @@
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Services;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.Reflection.Metadata.Ecma335;
 
 namespace LastCallMotorAuctions.API.Controllers;
 
@@ -78,5 +80,19 @@ public class UsersController : Controller
             _logger.LogError(ex, "Error retrieving user");
             return StatusCode(500, new { message = "An error ocurred" });
         }
+    }
+
+    [Authorize(Roles = "Buyer")]
+    [HttpPost("request-seller")]
+    public async Task<IActionResult> RequestSeller()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var ok = await _userService.RequestSellerAccountAsync(userId);
+        if (!ok) return BadRequest(new { message = "Seller request already exists." });
+
+        return Ok(new { message = "Seller request submitted." });
     }
 }
