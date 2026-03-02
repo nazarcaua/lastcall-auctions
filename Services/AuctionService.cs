@@ -2,8 +2,11 @@
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Hubs;
 using LastCallMotorAuctions.API.Models;
+using LastCallMotorAuctions.API.ViewModels;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LastCallMotorAuctions.API.Services
 {
@@ -217,8 +220,11 @@ namespace LastCallMotorAuctions.API.Services
         public async Task<BuyerDashboardViewModel> GetBuyerDashboardAsync(int buyerId)
         {
             // Get buyer info
-            var buyer = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == buyerId);
-            var buyerName = buyer?.Name ?? string.Empty;
+            var buyer = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == buyerId);
+
+            var buyerName = buyer?.FullName ?? string.Empty;
 
             // Get bids placed by buyer
             var bids = await _context.Bids

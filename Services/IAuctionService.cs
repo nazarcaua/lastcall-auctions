@@ -1,4 +1,6 @@
-﻿using LastCallMotorAuctions.API.DTOs;
+﻿using LastCallMotorAuctions.API.Models;
+using LastCallMotorAuctions.API.DTOs;
+using LastCallMotorAuctions.API.ViewModels;
 
 namespace LastCallMotorAuctions.API.Services
 {
