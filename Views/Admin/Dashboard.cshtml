@@ -1,0 +1,213 @@
+@using LastCallMotorAuctions.API.ViewModels
+@model AdminDashboardViewModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="dashboard-header">
+    <h1>Admin Dashboard</h1>
+    <p class="muted">Manage users, roles, and monitor platform activity.</p>
+</div>
+
+@if (ViewBag.DbError != null)
+{
+    <div class="alert alert-warning">@ViewBag.DbError</div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="dashboard-cards">
+    <div class="card">
+        <div class="card-label">Total Users</div>
+        <div class="card-value">@Model.TotalUsers</div>
+        <div class="card-sub">Registered accounts</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Active</div>
+        <div class="card-value">@Model.ActiveUsers</div>
+        <div class="card-sub">Active accounts</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Suspended</div>
+        <div class="card-value">@Model.SuspendedUsers</div>
+        <div class="card-sub">Suspended accounts</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Buyers</div>
+        <div class="card-value">@Model.BuyerCount</div>
+        <div class="card-sub">Buyer role</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Sellers</div>
+        <div class="card-value">@Model.SellerCount</div>
+        <div class="card-sub">Seller role</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Admins</div>
+        <div class="card-value">@Model.AdminCount</div>
+        <div class="card-sub">Admin role</div>
+    </div>
+</div>
+
+<div class="dashboard-cards" style="margin-top: 4px;">
+    <div class="card">
+        <div class="card-label">Total Listings</div>
+        <div class="card-value">@Model.TotalListings</div>
+        <div class="card-sub">All time</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Total Auctions</div>
+        <div class="card-value">@Model.TotalAuctions</div>
+        <div class="card-sub">All time</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Active Auctions</div>
+        <div class="card-value">@Model.ActiveAuctions</div>
+        <div class="card-sub">Currently running</div>
+    </div>
+</div>
+
+<hr class="divider" />
+
+<div class="section">
+    <div class="section-header">
+        <h2>All Users</h2>
+        <p class="muted">View and manage all registered users.</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Roles</th>
+                <th>Status</th>
+                <th style="width: 340px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Users.Any())
+            {
+                <tr>
+                    <td colspan="6" class="muted">No users found.</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var user in Model.Users)
+                {
+                    var isSeller = user.Roles.Contains("Seller");
+                    var isAdmin = user.Roles.Contains("Admin");
+                    var isSuspended = user.StatusId == 2;
+
+                    <tr>
+                        <td>@user.UserId</td>
+                        <td>@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td>
+                            @foreach (var role in user.Roles)
+                            {
+                                var badgeClass = role switch
+                                {
+                                    "Admin" => "badge-admin",
+                                    "Seller" => "badge-seller",
+                                    _ => "badge-buyer"
+                                };
+                                <span class="role-badge @badgeClass">@role</span>
+                            }
+                        </td>
+                        <td>
+                            @if (isSuspended)
+                            {
+                                <span class="badge ended">Suspended</span>
+                            }
+                            else
+                            {
+                                <span class="badge active">Active</span>
+                            }
+                        </td>
+                        <td>
+                            @* Seller role toggle *@
+                            @if (!isSeller)
+                            {
+                                <form method="post" asp-action="GrantSeller" asp-controller="Admin" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="link" title="Grant Seller role">+ Seller</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-action="RevokeSeller" asp-controller="Admin" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="link danger" title="Revoke Seller role">- Seller</button>
+                                </form>
+                            }
+
+                            <span class="sep">|</span>
+
+                            @* Admin role toggle *@
+                            @if (!isAdmin)
+                            {
+                                <form method="post" asp-action="GrantAdmin" asp-controller="Admin" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="link" title="Grant Admin role">+ Admin</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-action="RevokeAdmin" asp-controller="Admin" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="link danger" title="Revoke Admin role">- Admin</button>
+                                </form>
+                            }
+
+                            <span class="sep">|</span>
+
+                            @* Suspend / Activate toggle *@
+                            @if (!isSuspended)
+                            {
+                                <form method="post" asp-action="SuspendUser" asp-controller="Admin" style="display:inline;" onsubmit="return confirm('Suspend this user? They will be locked out immediately.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="link danger" title="Suspend user">Suspend</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-action="ActivateUser" asp-controller="Admin" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="link" title="Activate user">Activate</button>
+                                </form>
+                            }
+
+                            <span class="sep">|</span>
+
+                            @* Delete *@
+                            <form method="post" asp-action="DeleteUser" asp-controller="Admin" style="display:inline;" onsubmit="return confirm('Permanently delete this user and ALL their data (listings, auctions, bids)? This cannot be undone.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@user.UserId" />
+                                <button type="submit" class="delete-btn" title="Delete user">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
