@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LastCallMotorAuctions.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260205004344_InitialCreate")]
+    [Migration("20260212202454_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -69,6 +69,42 @@ namespace LastCallMotorAuctions.API.Migrations
 
                             t.HasCheckConstraint("CK_Auctions_times", "EndTime > StartTime");
                         });
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.AuctionGroup", b =>
+                {
+                    b.Property<int>("AuctionGroupId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AuctionGroupId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("AuctionGroupId");
+
+                    b.ToTable("AuctionGroups");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.AuctionGroupAuction", b =>
+                {
+                    b.Property<int>("AuctionGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AuctionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AuctionGroupId", "AuctionId");
+
+                    b.HasIndex("AuctionId");
+
+                    b.ToTable("AuctionGroupAuctions");
                 });
 
             modelBuilder.Entity("LastCallMotorAuctions.API.Models.AuctionResult", b =>
@@ -925,6 +961,25 @@ namespace LastCallMotorAuctions.API.Migrations
                     b.Navigation("Status");
                 });
 
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.AuctionGroupAuction", b =>
+                {
+                    b.HasOne("LastCallMotorAuctions.API.Models.AuctionGroup", "AuctionGroup")
+                        .WithMany("Auctions")
+                        .HasForeignKey("AuctionGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LastCallMotorAuctions.API.Models.Auction", "Auction")
+                        .WithMany()
+                        .HasForeignKey("AuctionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Auction");
+
+                    b.Navigation("AuctionGroup");
+                });
+
             modelBuilder.Entity("LastCallMotorAuctions.API.Models.AuctionResult", b =>
                 {
                     b.HasOne("LastCallMotorAuctions.API.Models.Auction", "Auction")
@@ -1137,6 +1192,11 @@ namespace LastCallMotorAuctions.API.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.AuctionGroup", b =>
+                {
+                    b.Navigation("Auctions");
                 });
 
             modelBuilder.Entity("LastCallMotorAuctions.API.Models.VehicleMake", b =>

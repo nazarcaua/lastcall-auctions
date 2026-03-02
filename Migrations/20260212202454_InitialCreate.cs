@@ -29,6 +29,20 @@ namespace LastCallMotorAuctions.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AuctionGroups",
+                columns: table => new
+                {
+                    AuctionGroupId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuctionGroups", x => x.AuctionGroupId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AuctionStatuses",
                 columns: table => new
                 {
@@ -487,6 +501,30 @@ namespace LastCallMotorAuctions.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AuctionGroupAuctions",
+                columns: table => new
+                {
+                    AuctionGroupId = table.Column<int>(type: "int", nullable: false),
+                    AuctionId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuctionGroupAuctions", x => new { x.AuctionGroupId, x.AuctionId });
+                    table.ForeignKey(
+                        name: "FK_AuctionGroupAuctions_AuctionGroups_AuctionGroupId",
+                        column: x => x.AuctionGroupId,
+                        principalTable: "AuctionGroups",
+                        principalColumn: "AuctionGroupId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AuctionGroupAuctions_Auctions_AuctionId",
+                        column: x => x.AuctionId,
+                        principalTable: "Auctions",
+                        principalColumn: "AuctionId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Bids",
                 columns: table => new
                 {
@@ -689,6 +727,11 @@ namespace LastCallMotorAuctions.API.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AuctionGroupAuctions_AuctionId",
+                table: "AuctionGroupAuctions",
+                column: "AuctionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AuctionResults_WinningBidId",
                 table: "AuctionResults",
                 column: "WinningBidId");
@@ -851,6 +894,9 @@ namespace LastCallMotorAuctions.API.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "AuctionGroupAuctions");
+
+            migrationBuilder.DropTable(
                 name: "AuctionResults");
 
             migrationBuilder.DropTable(
@@ -876,6 +922,9 @@ namespace LastCallMotorAuctions.API.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "AuctionGroups");
 
             migrationBuilder.DropTable(
                 name: "Bids");
