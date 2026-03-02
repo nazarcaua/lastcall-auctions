@@ -20,6 +20,10 @@
                     {
                         <a href="/Seller/Dashboard">Seller Dashboard</a>
                     }
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="/Admin/Dashboard">Admin</a>
+                    }
                 }
             </div>
         </div>

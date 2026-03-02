@@ -223,6 +223,9 @@ using (var scope = app.Services.CreateScope())
     
     // Seed identity roles
     await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
+
+    // Seed default admin account
+    await AdminSeeder.SeedAdminAsync(scope.ServiceProvider);
 }
 
 app.Run();
