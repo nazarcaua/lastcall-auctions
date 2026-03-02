@@ -28,13 +28,21 @@ namespace LastCallMotorAuctions.API.Controllers
                 .Select(s => s.StatusId)
                 .SingleAsync();
 
+            var draftStatusId = await _db.ListingStatuses
+                .Where(s => s.Name == "Draft")
+                .Select(s => s.StatusId)
+                .SingleAsync();
+
+            var pendingListingCount = await _db.Listings
+                .CountAsync(l => l.StatusId == draftStatusId);
+
             var liveAuctionCount = await _db.Auctions
                 .CountAsync(a => a.StatusId == liveStatus);
 
             var dto = new AdminDashboardSummaryDto
             {
                 PendingSellerRequests = 0, // placeholder
-                PendingListings = 0, // placeholder
+                PendingListings = pendingListingCount,
                 LiveAuctions = liveAuctionCount
             };
 
