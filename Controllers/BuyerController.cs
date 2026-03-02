@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace LastCallMotorAuctions.API.Controllers
 {
@@ -35,8 +36,8 @@ namespace LastCallMotorAuctions.API.Controllers
                     BuyerId = dashboard.BuyerId,
                     BuyerName = dashboard.BuyerName,
                     AuctionList = dashboard.AuctionList,
-                    Favourites = dashboard.Favourites,
-                    Transactions = dashboard.Transactions,
+                    Favourites = dashboard.Favourites.Cast<object>().ToList(),  // ? FIXED
+                    Transactions = dashboard.Transactions.Cast<object>().ToList(),  // ? FIXED
                     BidList = dashboard.BidList.Select(b => new BidDto
                     {
                         BidId = b.BidId,
