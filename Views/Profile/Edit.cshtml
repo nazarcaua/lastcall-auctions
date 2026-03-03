@@ -1,0 +1,150 @@
+@model EditProfileViewModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Edit Profile";
+}
+
+<section class="page">
+
+    <a class="back-link" href="/Profile/@Model.UserId">← Back to Profile</a>
+
+    <div class="profile-edit-page">
+        <h1>Edit Profile</h1>
+        <p class="muted">Update your profile information.</p>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+
+        <form method="post" asp-action="Edit" asp-controller="Profile" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <!-- Profile Picture -->
+            <div class="profile-edit-card">
+                <h3>Profile Picture</h3>
+                <div class="profile-edit-avatar-row">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePictureUrl))
+                    {
+                        <div class="profile-edit-avatar-placeholder" id="avatarPlaceholder" style="display:none;">
+                            @(string.IsNullOrEmpty(Model.FullName) ? "?" : Model.FullName[0].ToString().ToUpper())
+                        </div>
+                        <img class="profile-edit-avatar" src="@Model.ProfilePictureUrl" alt="Current picture" id="avatarPreview" />
+                    }
+                    else
+                    {
+                        <div class="profile-edit-avatar-placeholder" id="avatarPlaceholder">
+                            @(string.IsNullOrEmpty(Model.FullName) ? "?" : Model.FullName[0].ToString().ToUpper())
+                        </div>
+                        <img class="profile-edit-avatar" id="avatarPreview" style="display:none;" />
+                    }
+                    <div class="profile-edit-upload">
+                        <input type="file" id="profilePictureInput" name="profilePicture" accept=".jpg,.jpeg,.png,.webp" style="display:none;" />
+                        <button type="button" class="btn small outline" id="chooseFileBtn">Choose File</button>
+                        @if (!string.IsNullOrEmpty(Model.ProfilePictureUrl))
+                        {
+                            <button type="submit" class="btn small outline" style="margin-left:8px; color:var(--color-danger);" formaction="/Profile/RemoveProfilePicture" formmethod="post">Remove</button>
+                        }
+                        <span class="muted" id="fileNameLabel" style="margin-left:8px; font-size:13px;">No file chosen</span>
+                        <p class="muted" style="margin-top:6px; font-size:12px;">Max 5 MB. JPG, PNG or WebP.</p>
+                    </div>
+                </div>
+                <div style="margin-top:14px;">
+                    <label style="font-size:13px; color:var(--color-muted); font-weight:500; display:block; margin-bottom:4px;">Or paste an image URL</label>
+                    <input type="url" name="profilePictureUrl" placeholder="https://example.com/photo.jpg" />
+                    <p class="muted" style="margin-top:4px; font-size:12px;">File upload takes priority over URL if both are provided.</p>
+                </div>
+            </div>
+
+            <!-- Full Name -->
+            <div class="profile-edit-card">
+                <h3>Full Name</h3>
+                <input type="text" name="fullName" value="@Model.FullName" required maxlength="150" />
+            </div>
+
+            <!-- Email -->
+            <div class="profile-edit-card">
+                <h3>Email</h3>
+                <input type="email" name="email" value="@Model.Email" required />
+                <div style="margin-top:6px;">
+                    @if (Model.EmailConfirmed)
+                    {
+                        <span class="email-verified">✓ Verified</span>
+                    }
+                    else
+                    {
+                        <span class="email-unverified">✗ Not verified</span>
+                    }
+                </div>
+                <p class="muted" style="margin-top:4px; font-size:12px;">Changing your email will reset its verification status.</p>
+            </div>
+
+            <!-- Roles (read-only) -->
+            <div class="profile-edit-card">
+                <h3>Roles</h3>
+                <div class="profile-badges">
+                    @foreach (var role in Model.Roles)
+                    {
+                        var badgeClass = role switch
+                        {
+                            "Admin" => "profile-role-admin",
+                            "Seller" => "profile-role-seller",
+                            _ => "profile-role-buyer"
+                        };
+                        <span class="profile-role-badge @badgeClass">@role</span>
+                    }
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn">Save Changes</button>
+                <a class="btn outline" href="/Profile/@Model.UserId">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+</section>
+
+@section Scripts {
+<script>
+    (function () {
+        var fileInput = document.getElementById('profilePictureInput');
+        var chooseBtn = document.getElementById('chooseFileBtn');
+        var label = document.getElementById('fileNameLabel');
+        var preview = document.getElementById('avatarPreview');
+        var placeholder = document.getElementById('avatarPlaceholder');
+
+        if (chooseBtn && fileInput) {
+            chooseBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+            });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                if (this.files && this.files[0]) {
+                    if (label) label.textContent = this.files[0].name;
+                    var reader = new FileReader();
+                    reader.onload = function (ev) {
+                        if (preview) {
+                            preview.src = ev.target.result;
+                            preview.style.display = '';
+                        }
+                        if (placeholder) placeholder.style.display = 'none';
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                } else {
+                    if (label) label.textContent = 'No file chosen';
+                }
+            });
+        }
+    })();
+</script>
+}

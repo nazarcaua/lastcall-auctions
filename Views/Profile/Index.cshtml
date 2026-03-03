@@ -1,0 +1,202 @@
+@model ProfileViewModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = $"{Model.FullName}'s Profile";
+    var now = DateTime.UtcNow;
+}
+
+<section class="page">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- ============================
+         Profile Section
+         ============================ -->
+    <div class="profile-section">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar-wrap">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePictureUrl))
+                    {
+                        <img class="profile-avatar" src="@Model.ProfilePictureUrl" alt="@Model.FullName" />
+                    }
+                    else
+                    {
+                        <div class="profile-avatar-placeholder">
+                            @(string.IsNullOrEmpty(Model.FullName) ? "?" : Model.FullName[0].ToString().ToUpper())
+                        </div>
+                    }
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name">@Model.FullName</h1>
+                    <div class="profile-meta">
+                        <span class="profile-email">
+                            @Model.Email
+                            @if (Model.EmailConfirmed)
+                            {
+                                <span class="email-verified" title="Email verified">✓ Verified</span>
+                            }
+                            else
+                            {
+                                <span class="email-unverified" title="Email not verified">✗ Not verified</span>
+                            }
+                        </span>
+                    </div>
+                    <div class="profile-badges">
+                        @foreach (var role in Model.Roles)
+                        {
+                            var badgeClass = role switch
+                            {
+                                "Admin" => "profile-role-admin",
+                                "Seller" => "profile-role-seller",
+                                _ => "profile-role-buyer"
+                            };
+                            <span class="profile-role-badge @badgeClass">@role</span>
+                        }
+
+                        @if (Model.StatusId == 1)
+                        {
+                            <span class="profile-status-badge profile-status-active">Active</span>
+                        }
+                        else
+                        {
+                            <span class="profile-status-badge profile-status-suspended">Suspended</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            @if (Model.IsOwnProfile)
+            {
+                <div class="profile-actions">
+                    <a class="btn small" href="/Profile/Edit">Edit Profile</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ============================
+         Auctions Section
+         ============================ -->
+    @if (Model.IsSeller)
+    {
+        <div class="section">
+            <div class="section-header">
+                <h2>Active Auctions</h2>
+                <p class="muted">@(Model.FullName)'s currently running auctions.</p>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Auction</th>
+                        <th>Vehicles</th>
+                        <th>Start Price</th>
+                        <th>Ends</th>
+                        <th>Time Left</th>
+                        <th>Status</th>
+                        <th style="width:100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.ActiveAuctionGroups.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="muted">No active auctions.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var g in Model.ActiveAuctionGroups)
+                        {
+                            var ends = g.Auctions.Min(a => a.EndTime);
+                            var startPrice = g.Auctions.Min(a => a.StartPrice);
+                            var timeLeft = ends - now;
+                            var timeLeftText = timeLeft.TotalSeconds <= 0 ? "Ended" : $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h {timeLeft.Minutes}m";
+
+                            <tr>
+                                <td>@g.Title</td>
+                                <td>@(g.Auctions.Count) vehicle@(g.Auctions.Count != 1 ? "s" : "")</td>
+                                <td>$@startPrice.ToString("N2")</td>
+                                <td>@ends.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                                <td>@timeLeftText</td>
+                                <td>@(g.Auctions.First().Status?.Name ?? $"StatusId: {g.Auctions.First().StatusId}")</td>
+                                <td>
+                                    <a class="link" href="/Browse/Detail/@(g.AuctionGroupId ?? g.GroupKey)">View</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>Recently Ended</h2>
+                <p class="muted">@(Model.FullName)'s most recently ended auctions.</p>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Start Price</th>
+                        <th>Reserve</th>
+                        <th>Ended</th>
+                        <th>Status</th>
+                        <th style="width:100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.RecentlyEndedAuctions.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="muted">No ended auctions yet.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var a in Model.RecentlyEndedAuctions)
+                        {
+                            var vehicleTitle = a.Listing != null
+                                ? $"{a.Listing.Year} {a.Listing.Make?.Name ?? ""} {a.Listing.Model?.Name ?? ""}"
+                                : $"Listing #{a.ListingId}";
+
+                            <tr>
+                                <td>@vehicleTitle</td>
+                                <td>$@a.StartPrice.ToString("N2")</td>
+                                <td>@(a.ReservePrice.HasValue ? $"${a.ReservePrice.Value:N2}" : "-")</td>
+                                <td>@a.EndTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                                <td>@(a.Status?.Name ?? $"StatusId: {a.StatusId}")</td>
+                                <td>
+                                    <a class="link" href="/Browse/Detail/@a.AuctionId">View</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (Model.IsBuyer)
+    {
+        <div class="section">
+            <div class="section-header">
+                <h2>Buyer Activity</h2>
+                <p class="muted">@(Model.FullName)'s bidding activity will appear here.</p>
+            </div>
+            <p class="muted">Coming soon.</p>
+        </div>
+    }
+
+</section>

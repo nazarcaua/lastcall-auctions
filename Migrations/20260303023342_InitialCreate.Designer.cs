@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LastCallMotorAuctions.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260212202454_InitialCreate")]
+    [Migration("20260303023342_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -594,6 +594,38 @@ namespace LastCallMotorAuctions.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.SellerRequest", b =>
+                {
+                    b.Property<int>("SellerRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SellerRequestId"));
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRejected")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("SellerRequestId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SellerRequests");
+                });
+
             modelBuilder.Entity("LastCallMotorAuctions.API.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -643,6 +675,10 @@ namespace LastCallMotorAuctions.API.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("ProfilePictureUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -1081,6 +1117,17 @@ namespace LastCallMotorAuctions.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Auction");
+                });
+
+            modelBuilder.Entity("LastCallMotorAuctions.API.Models.SellerRequest", b =>
+                {
+                    b.HasOne("LastCallMotorAuctions.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LastCallMotorAuctions.API.Models.User", b =>

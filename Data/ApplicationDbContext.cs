@@ -50,6 +50,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
         {
             b.Property(u => u.FullName).HasMaxLength(150).IsRequired();
             b.Property(u => u.StatusId).IsRequired();
+            b.Property(u => u.ProfilePictureUrl).HasMaxLength(500);
             b.HasIndex(u => u.Email).IsUnique();
             b.HasOne(u => u.Status).WithMany().HasForeignKey(u => u.StatusId).OnDelete(DeleteBehavior.Restrict);
         });

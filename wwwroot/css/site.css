@@ -1010,6 +1010,315 @@ main {
 }
 
 /* ============================
+   Navbar Profile Dropdown
+   ============================ */
+.nav-profile-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.nav-avatar-btn {
+    background: none;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    padding: 0;
+    cursor: pointer;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color var(--transition);
+}
+
+.nav-avatar-btn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.nav-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.nav-avatar-initials {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+
+.nav-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 180px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-elevated);
+    z-index: 200;
+    padding: 6px 0;
+}
+
+.nav-dropdown-menu.show {
+    display: block;
+}
+
+.nav-dropdown-menu a {
+    display: block;
+    padding: 9px 16px;
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background var(--transition);
+}
+
+.nav-dropdown-menu a:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--color-primary);
+}
+
+.nav-dropdown-menu hr {
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid var(--color-border-light);
+}
+
+/* ============================
+   Profile Page
+   ============================ */
+.profile-section {
+    margin-bottom: 8px;
+}
+
+.profile-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    box-shadow: var(--shadow-card);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.profile-avatar-wrap {
+    flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--color-border);
+}
+
+.profile-avatar-placeholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 36px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--color-border);
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    margin: 0 0 4px 0;
+    font-size: 26px;
+    letter-spacing: -0.3px;
+}
+
+.profile-meta {
+    margin-bottom: 10px;
+}
+
+.profile-email {
+    font-size: 14px;
+    color: var(--color-muted);
+}
+
+.email-verified {
+    color: var(--color-success);
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 6px;
+}
+
+.email-unverified {
+    color: var(--color-warning);
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 6px;
+}
+
+.profile-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.profile-role-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+    border: 1.5px solid;
+}
+
+.profile-role-admin {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+    background: rgba(176, 0, 32, 0.06);
+}
+
+.profile-role-seller {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: rgba(37, 99, 235, 0.06);
+}
+
+.profile-role-buyer {
+    color: #9ca3af;
+    border-color: #d1d5db;
+    background: rgba(156, 163, 175, 0.08);
+}
+
+.profile-status-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+}
+
+.profile-status-active {
+    background: rgba(40, 167, 69, 0.15);
+    color: #1a7f37;
+}
+
+.profile-status-suspended {
+    background: rgba(176, 0, 32, 0.12);
+    color: var(--color-danger);
+}
+
+.profile-actions {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+/* ============================
+   Edit Profile Page
+   ============================ */
+.profile-edit-page {
+    max-width: 600px;
+}
+
+.profile-edit-page h1 {
+    margin-bottom: 4px;
+}
+
+.profile-edit-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-top: 16px;
+    box-shadow: var(--shadow-card);
+}
+
+.profile-edit-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+}
+
+.profile-edit-card input[type="text"],
+.profile-edit-card input[type="email"],
+.profile-edit-card input[type="url"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.profile-edit-card input[type="text"]:focus,
+.profile-edit-card input[type="email"]:focus,
+.profile-edit-card input[type="url"]:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.profile-edit-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-edit-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+}
+
+.profile-edit-avatar-placeholder {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.profile-edit-upload {
+    flex: 1;
+}
+
+.profile-edit-upload label {
+    font-size: 13px;
+    color: var(--color-muted);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ============================
    Responsive
    ============================ */
 @media (max-width: 900px) {

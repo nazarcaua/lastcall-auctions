@@ -197,6 +197,7 @@ namespace LastCallMotorAuctions.API.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FullName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     StatusId = table.Column<byte>(type: "tinyint", nullable: false),
+                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -378,6 +379,29 @@ namespace LastCallMotorAuctions.API.Migrations
                     table.CheckConstraint("CK_Notifications_OneLink", "(CASE WHEN AuctionId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN ListingId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN BidId IS NULL THEN 0 ELSE 1 END) + (CASE WHEN PaymentId IS NULL THEN 0 ELSE 1 END) <= 1");
                     table.ForeignKey(
                         name: "FK_Notifications_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SellerRequests",
+                columns: table => new
+                {
+                    SellerRequestId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    IsRejected = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SellerRequests", x => x.SellerRequestId);
+                    table.ForeignKey(
+                        name: "FK_SellerRequests_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -835,6 +859,11 @@ namespace LastCallMotorAuctions.API.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_SellerRequests_UserId",
+                table: "SellerRequests",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserStatuses_Name",
                 table: "UserStatuses",
                 column: "Name",
@@ -916,6 +945,9 @@ namespace LastCallMotorAuctions.API.Migrations
 
             migrationBuilder.DropTable(
                 name: "PaymentStatuses");
+
+            migrationBuilder.DropTable(
+                name: "SellerRequests");
 
             migrationBuilder.DropTable(
                 name: "VehicleYearMakeModels");
