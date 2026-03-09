@@ -32,5 +32,65 @@ namespace LastCallMotorAuctions.API.Controllers
             return int.Parse(idClaim);
         }
 
+        [HttpPost("setup")]
+        [ProducesResponseType(typeof(PaymentSetupResponseDto), 200)]
+        public async Task<IActionResult> Setup()
+        {
+            try
+            {
+                var buyerId = GetBuyerId();
+                var result = await _paymentService.CreateSetupAsync(buyerId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating payment setup intent");
+                return StatusCode(500, new { message = "Error creating payment setup." });
+            }
+        }
+
+        [HttpPost("preauth")]
+        [ProducesResponseType(typeof(PaymentPreauthRequestDto), 200)]
+        public async Task<IActionResult> Preauth([FromBody] PaymentPreauthRequestDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var buyerId = GetBuyerId();
+                var result = await _paymentService.CreatePreauthAsync(buyerId, request);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating payment preauth");
+                return StatusCode(500, new { message = "Error creating payment pre-authorization." });
+            }
+        }
+
+        [HttpGet("status")]
+        [ProducesResponseType(typeof(PaymentStatusResponseDto), 200)]
+        public async Task<IActionResult> Status([FromQuery] int auctionId)
+        {
+            if (auctionId <= 0)
+                return BadRequest(new { message = "auctionId is required." });
+
+            try
+            {
+                var buyerId = GetBuyerId();
+                var status = await _paymentService.GetStatusAsync(buyerId, auctionId);
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking payment status for auction {AuctionId}", auctionId);
+                return StatusCode(500, new { message = "Error checking payment status." });
+            }
+        }
     }
 }
