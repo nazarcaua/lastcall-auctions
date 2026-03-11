@@ -22,7 +22,7 @@
 
     public class PaymentStatusResponseDto
     {
-        public int Auctionid { get; set; }
+        public int AuctionId { get; set; }
         public bool Cleared { get; set; }
         public string Reason { get; set; } = string.Empty;
     }
