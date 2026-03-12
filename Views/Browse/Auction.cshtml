@@ -1,0 +1,214 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Auction";
+}
+
+<link rel="stylesheet" href="~/css/bidding.css" asp-append-version="true" />
+
+<section class="auction-detail-page">
+    <a class="back-link" href="/Browse">&larr; Back to auctions</a>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading auction...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="error-state hidden">
+        <h2>Auction Not Found</h2>
+        <p>The auction you're looking for doesn't exist or has been removed.</p>
+        <a href="/Browse" class="btn">Browse Auctions</a>
+    </div>
+
+    <!-- Main Content -->
+    <div id="auctionContent" class="auction-content hidden">
+        <div class="auction-layout">
+            <!-- Left Column: Photos & Details -->
+            <div class="auction-main">
+                <!-- Photo Gallery -->
+                <div class="photo-gallery">
+                    <div class="main-photo-container">
+                        <img id="mainPhoto" class="main-photo" src="" alt="Vehicle photo" />
+                        <button id="prevPhotoBtn" class="gallery-nav prev" aria-label="Previous photo">&lsaquo;</button>
+                        <button id="nextPhotoBtn" class="gallery-nav next" aria-label="Next photo">&rsaquo;</button>
+                        <div id="photoCounter" class="photo-counter">1 / 1</div>
+                    </div>
+                    <div id="thumbnailStrip" class="thumbnail-strip">
+                        <!-- Thumbnails will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Vehicle Info -->
+                <div class="vehicle-info-card">
+                    <h1 id="vehicleTitle" class="vehicle-title"></h1>
+                    <p id="listingTitle" class="listing-title"></p>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Year</span>
+                            <span id="vehicleYear" class="info-value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Make</span>
+                            <span id="vehicleMake" class="info-value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Model</span>
+                            <span id="vehicleModel" class="info-value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Mileage</span>
+                            <span id="vehicleMileage" class="info-value"></span>
+                        </div>
+                    </div>
+
+                    <div id="vehicleDescription" class="vehicle-description"></div>
+                </div>
+
+                <!-- Bid History -->
+                <div class="bid-history-card">
+                    <h3>Bid History</h3>
+                    <div id="bidHistoryContent">
+                        <p class="no-bids-message">No bids yet. Be the first to bid!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Bidding Panel -->
+            <div class="auction-sidebar">
+                <!-- Auction Status -->
+                <div class="bidding-panel">
+                    <div class="auction-status">
+                        <span id="auctionStatusBadge" class="status-badge active">Active</span>
+                        <div id="countdownTimer" class="countdown-timer">
+                            <span class="countdown-label">Time Remaining</span>
+                            <div class="countdown-display">
+                                <div class="countdown-unit">
+                                    <span id="countdownDays" class="countdown-value">0</span>
+                                    <span class="countdown-unit-label">Days</span>
+                                </div>
+                                <div class="countdown-unit">
+                                    <span id="countdownHours" class="countdown-value">0</span>
+                                    <span class="countdown-unit-label">Hrs</span>
+                                </div>
+                                <div class="countdown-unit">
+                                    <span id="countdownMinutes" class="countdown-value">0</span>
+                                    <span class="countdown-unit-label">Min</span>
+                                </div>
+                                <div class="countdown-unit">
+                                    <span id="countdownSeconds" class="countdown-value">0</span>
+                                    <span class="countdown-unit-label">Sec</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Bid -->
+                    <div class="current-bid-section">
+                        <div class="bid-info-row">
+                            <span class="bid-label">Current Bid</span>
+                            <span id="currentBidAmount" class="current-bid-amount">$0</span>
+                        </div>
+                        <div class="bid-info-row secondary">
+                            <span class="bid-label">Starting Price</span>
+                            <span id="startingPrice" class="bid-value">$0</span>
+                        </div>
+                        <div class="bid-info-row secondary" id="reservePriceRow">
+                            <span class="bid-label">Reserve Price</span>
+                            <span id="reserveStatus" class="reserve-status">Not Met</span>
+                        </div>
+                        <div class="bid-info-row secondary">
+                            <span class="bid-label">Total Bids</span>
+                            <span id="totalBidsCount" class="bid-value">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Place Bid Form -->
+                    <div id="bidFormSection" class="bid-form-section">
+                        <div class="minimum-bid-info">
+                            <span>Minimum Bid:</span>
+                            <span id="minimumBid" class="minimum-bid-amount">$0</span>
+                        </div>
+
+                        <div class="bid-input-group">
+                            <span class="currency-prefix">CAD $</span>
+                            <input type="number" id="bidAmountInput" class="bid-input" placeholder="Enter your bid" min="0" step="100" />
+                        </div>
+
+                        <div class="quick-bid-buttons">
+                            <button type="button" class="quick-bid-btn" data-increment="100">+$100</button>
+                            <button type="button" class="quick-bid-btn" data-increment="500">+$500</button>
+                            <button type="button" class="quick-bid-btn" data-increment="1000">+$1,000</button>
+                        </div>
+
+                        <button type="button" id="placeBidBtn" class="btn btn-bid">
+                            Place Bid
+                        </button>
+
+                        <p class="bid-terms">
+                            By placing a bid, you agree to our <a href="/Home/Policies">terms and conditions</a>.
+                        </p>
+                    </div>
+
+                    <!-- Login Prompt (for non-authenticated users) -->
+                    <div id="loginPrompt" class="login-prompt hidden">
+                        <p>You must be logged in to place a bid.</p>
+                        <a href="/Auth/Login" class="btn">Login to Bid</a>
+                        <p class="register-link">Don't have an account? <a href="/Auth/Register">Register</a></p>
+                    </div>
+
+                    <!-- Auction Ended -->
+                    <div id="auctionEndedSection" class="auction-ended-section hidden">
+                        <h3>Auction Ended</h3>
+                        <p id="winnerInfo" class="winner-info"></p>
+                    </div>
+                </div>
+
+                <!-- Auction Details -->
+                <div class="auction-details-card">
+                    <h3>Auction Details</h3>
+                    <div class="detail-list">
+                        <div class="detail-item">
+                            <span class="detail-label">Auction ID</span>
+                            <span id="auctionId" class="detail-value">#0</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Started</span>
+                            <span id="auctionStartTime" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Ends</span>
+                            <span id="auctionEndTime" class="detail-value"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Bid Confirmation Modal -->
+<div id="bidConfirmModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3>Confirm Your Bid</h3>
+        <p>You are about to place a bid of:</p>
+        <p id="confirmBidAmount" class="confirm-amount">$0</p>
+        <p class="confirm-warning">This bid is binding. You cannot retract it once placed.</p>
+        <div class="modal-actions">
+            <button type="button" id="cancelBidBtn" class="btn btn-outline">Cancel</button>
+            <button type="button" id="confirmBidBtn" class="btn btn-bid">Confirm Bid</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bid Success Toast -->
+<div id="bidToast" class="bid-toast hidden">
+    <span class="toast-icon">✓</span>
+    <span id="toastMessage" class="toast-message">Bid placed successfully!</span>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="~/js/bidding.js" asp-append-version="true"></script>
+}

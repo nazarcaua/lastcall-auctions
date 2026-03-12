@@ -1,102 +1,117 @@
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Edit Auction & Listing";
+    ViewData["Title"] = "Edit Auction";
+    var isGroup = ViewData["IsGroup"] as bool? ?? false;
+    var groupId = ViewData["GroupId"] as int?;
+    var groupTitle = ViewData["GroupTitle"] as string ?? "";
+    var auctionIds = ViewData["AuctionIds"] as List<int> ?? new List<int>();
+    var singleAuctionId = ViewData["AuctionId"] as int?;
 }
 
-<section class="page create-listings-page">
-    <h1>Edit Listing & Auction</h1>
+<link rel="stylesheet" href="~/css/auction-edit.css" asp-append-version="true" />
 
-    <div id="message" class="muted"></div>
+<section class="page edit-auction-page">
+    <div class="page-header">
+        <a href="/Seller/Dashboard" class="back-link">&larr; Back to Dashboard</a>
+        <h1>Edit Auction</h1>
+        <p class="subtitle">Update auction details, pricing, photos, and schedule.</p>
+    </div>
 
-    <div class="forms-root">
-        <div class="listing-card">
-            <form id="editForm">
-                <h3>Listing</h3>
-                <label>Title</label>
-                <input name="title" required />
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading auction data...</p>
+    </div>
 
-                <label>Description</label>
-                <textarea name="description" rows="3"></textarea>
+    <!-- Error State -->
+    <div id="errorState" class="error-state hidden">
+        <h2>Error Loading Auction</h2>
+        <p id="errorMessage">Could not load the auction data.</p>
+        <a href="/Seller/Dashboard" class="btn">Back to Dashboard</a>
+    </div>
 
-                <div class="row">
-                    <div>
-                        <label>Year</label>
-                        <select name="year" required></select>
-                    </div>
-                    <div>
-                        <label>Make</label>
-                        <select name="makeId" required></select>
-                    </div>
-                    <div>
-                        <label>Model</label>
-                        <select name="modelId" required></select>
-                    </div>
+    <!-- Main Content -->
+    <div id="editContent" class="edit-content hidden">
+        <!-- Auction Settings Card -->
+        <div class="settings-card">
+            <div class="card-header">
+                <span class="card-icon">📋</span>
+                <div>
+                    <h2>Auction Settings</h2>
+                    <p class="card-description">Adjust the auction title, schedule, and pricing.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="groupTitle">Auction Title</label>
+                <input id="groupTitle" type="text" class="form-input" placeholder="e.g. Spring Classic Auction - Lot 12" />
+            </div>
+
+            <div class="datetime-grid">
+                <div class="form-group">
+                    <label for="startTime">
+                        <span class="label-icon">🕐</span> Start Date & Time
+                    </label>
+                    <input id="startTime" type="datetime-local" class="form-input" />
+                    <span class="form-hint">When bidding opens.</span>
                 </div>
 
-                <div class="row">
-                    <div>
-                        <label>VIN</label>
-                        <input name="vin" />
-                    </div>
-                    <div>
-                        <label>Kilometers</label>
-                        <input name="mileage" type="number" min="0" />
-                    </div>
-                    <div>
-                        <label>Condition Grade</label>
-                        <select name="conditionGrade">
-                            <option value="5">5 - Excellent</option>
-                            <option value="4">4 - Very Good</option>
-                            <option value="3">3 - Good</option>
-                            <option value="2">2 - Fair</option>
-                            <option value="1">1 - Poor</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="endTime">
+                        <span class="label-icon">🏁</span> End Date & Time
+                    </label>
+                    <input id="endTime" type="datetime-local" class="form-input" />
+                    <span class="form-hint">When bidding closes.</span>
                 </div>
+            </div>
 
-                <h3>Photos</h3>
-                <div id="existingPhotos" class="photo-preview-grid"></div>
-                <div class="photo-upload-area">
-                    <input type="file" id="newPhotos" multiple accept=".jpg,.jpeg,.png,.webp" />
-                    <div class="upload-text"><strong>Click or drag</strong> to add photos (.jpg, .png, .webp)</div>
+            <div class="schedule-preview" id="schedulePreview">
+                <span class="preview-icon">📅</span>
+                <span id="scheduleText">Auction schedule</span>
+            </div>
+        </div>
+
+        <!-- Vehicles Section -->
+        <div class="vehicles-section">
+            <div class="section-header">
+                <div>
+                    <h2>Vehicles</h2>
+                    <p class="section-description">Edit vehicle details, photos, and pricing.</p>
                 </div>
+                <button id="addVehicleBtn" class="btn btn-secondary">
+                    <span class="btn-icon">+</span> Add Vehicle
+                </button>
+            </div>
 
-                <h3>Location</h3>
-                <label>City</label>
-                <input name="city" required />
-                <div class="row">
-                    <div>
-                        <label>Region</label>
-                        <input name="region" />
-                    </div>
-                    <div>
-                        <label>Country</label>
-                        <input name="country" required />
-                    </div>
-                    <div>
-                        <label>Postal Code</label>
-                        <input name="postalCode" />
-                    </div>
-                </div>
+            <div id="vehiclesContainer" class="vehicles-container">
+                <!-- Vehicle cards will be inserted here -->
+            </div>
+        </div>
 
-                <hr />
-                <h3>Auction</h3>
-                <label>Starting Price</label>
-                <input name="startPrice" type="number" step="0.01" />
-
-                <label>Reserve Price</label>
-                <input name="reservePrice" type="number" step="0.01" />
-
-                <label>Auction End (local)</label>
-                <input name="endTime" type="datetime-local" />
-
-                <div class="actions">
-                    <button id="saveBtn" class="btn">Save all changes</button>
-                    <a class="btn btn-outline" href="/Seller/Dashboard">Cancel</a>
-                </div>
-            </form>
+        <!-- Save Section -->
+        <div class="save-section">
+            <div class="save-info">
+                <p id="saveStatus"></p>
+            </div>
+            <div class="save-actions">
+                <a href="/Seller/Dashboard" class="btn btn-outline">Cancel</a>
+                <button id="saveAllBtn" class="btn btn-primary btn-large">
+                    <span class="btn-icon">💾</span> Save All Changes
+                </button>
+            </div>
         </div>
     </div>
 </section>
 
-<script src="/js/auction-edit.js"></script>
+<!-- Pass data to JS -->
+<script>
+    window.auctionEditData = {
+        isGroup: @(isGroup.ToString().ToLower()),
+        groupId: @(groupId?.ToString() ?? "null"),
+        groupTitle: "@groupTitle",
+        auctionIds: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(auctionIds)),
+        singleAuctionId: @(singleAuctionId?.ToString() ?? "null")
+    };
+</script>
+
+<script src="~/js/auction-edit.js" asp-append-version="true"></script>

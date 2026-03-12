@@ -120,15 +120,30 @@ namespace LastCallMotorAuctions.API.Services
 
             var createdListings = new List<ListingResponseDto>();
 
-            // If a group EndTime is provided, compute group start and validate once
+            // If a group EndTime is provided, compute group start and validate
             DateTime? groupStartUtc = null;
             DateTime? groupEndUtc = null;
             if (dto.EndTime.HasValue)
             {
-                groupStartUtc = DateTime.UtcNow;
+                var now = DateTime.UtcNow;
+
+                // Use provided start time or default to now
+                if (dto.StartTime.HasValue)
+                {
+                    groupStartUtc = dto.StartTime.Value.ToUniversalTime();
+                    // Allow start time up to 5 minutes in the past (for scheduling flexibility)
+                    if (groupStartUtc < now.AddMinutes(-5))
+                        throw new ArgumentException("Auction start time cannot be more than 5 minutes in the past.");
+                }
+                else
+                {
+                    groupStartUtc = now;
+                }
+
                 groupEndUtc = dto.EndTime.Value.ToUniversalTime();
+
                 if (groupEndUtc <= groupStartUtc.Value.AddMinutes(1))
-                    throw new ArgumentException("Auction end time must be at least 1 minute in the future.");
+                    throw new ArgumentException("Auction end time must be at least 1 minute after the start time.");
 
                 _logger.LogInformation("Creating auction group '{Title}' with StartUtc={StartUtc:o} EndUtc={EndUtc:o}", dto.AuctionGroupTitle ?? "(none)", groupStartUtc.Value, groupEndUtc.Value);
             }

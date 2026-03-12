@@ -10,7 +10,7 @@ public static class AdminSeeder
         var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
-        const string email = "adminaccount@gmail.com";
+        const string email = "admin@gmail.com";
         const string password = "Adminaccount1";
         const string fullName = "Admin";
 

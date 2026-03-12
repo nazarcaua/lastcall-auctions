@@ -42,6 +42,9 @@ namespace LastCallMotorAuctions.API.DTOs
         [Required]
         public List<VehicleItemDto> Vehicles { get; set; } = new();
 
+        // Group-level auction start time (shared) - if null, starts immediately
+        public DateTime? StartTime { get; set; }
+
         // Group-level auction end time (shared)
         public DateTime? EndTime { get; set; }
     }

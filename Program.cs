@@ -220,7 +220,10 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await NhtsaVehicleDataSeeder.SeedFromNhtsaAsync(context, logger);
-    
+
+    // Fallback seeder in case NHTSA API failed to populate year-make relationships
+    await VehicleDataFallbackSeeder.SeedAsync(context, logger);
+
     // Seed identity roles
     await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
 

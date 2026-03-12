@@ -9,5 +9,17 @@ namespace LastCallMotorAuctions.API.Controllers
         {
             return View();
         }
+
+        [HttpGet]
+        public IActionResult Policies()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult VehicleValue()
+        {
+            return View();
+        }
     }
 }

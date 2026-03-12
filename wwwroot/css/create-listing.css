@@ -1,0 +1,514 @@
+/* ============================
+   Create Listing Page Styles
+   ============================ */
+
+.create-listings-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.create-listings-page .page-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.create-listings-page .page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.create-listings-page .subtitle {
+    color: var(--color-muted);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* ============================
+   Settings Card
+   ============================ */
+
+.settings-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 28px;
+}
+
+.card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.card-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.card-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.card-description {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ============================
+   Form Elements
+   ============================ */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 8px;
+}
+
+.label-icon {
+    font-size: 1rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input::placeholder {
+    color: var(--color-muted);
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    margin-top: 6px;
+}
+
+.datetime-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* ============================
+   Schedule Preview
+   ============================ */
+
+.schedule-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    color: var(--color-muted);
+    margin-top: 8px;
+}
+
+.schedule-preview.active {
+    background: #dbeafe;
+    color: var(--color-accent);
+}
+
+.preview-icon {
+    font-size: 1.1rem;
+}
+
+/* ============================
+   Vehicles Section
+   ============================ */
+
+.vehicles-section {
+    margin-bottom: 28px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-description {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin: 4px 0 0 0;
+}
+
+.forms-root {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ============================
+   Empty State
+   ============================ */
+
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--color-surface);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.empty-state.hidden {
+    display: none;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+    color: var(--color-primary);
+}
+
+.empty-state p {
+    color: var(--color-muted);
+    margin: 0;
+}
+
+/* ============================
+   Vehicle Card (listing-card)
+   ============================ */
+
+.vehicle-form.listing-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-border-light);
+    position: relative;
+}
+
+.vehicle-form.listing-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-primary);
+}
+
+.vehicle-form.listing-card label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+.vehicle-form.listing-card label:first-of-type {
+    margin-top: 0;
+}
+
+.vehicle-form.listing-card input,
+.vehicle-form.listing-card select,
+.vehicle-form.listing-card textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.vehicle-form.listing-card input:focus,
+.vehicle-form.listing-card select:focus,
+.vehicle-form.listing-card textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.vehicle-form.listing-card textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.vehicle-form.listing-card .row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.vehicle-form.listing-card hr {
+    display: none;
+}
+
+/* Price inputs side by side */
+.vehicle-form .price-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ============================
+   Photo Upload
+   ============================ */
+
+.photo-upload-area {
+    position: relative;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    text-align: center;
+    transition: all var(--transition);
+    cursor: pointer;
+}
+
+.photo-upload-area:hover,
+.photo-upload-area.dragover {
+    border-color: var(--color-accent);
+    background: rgba(37, 99, 235, 0.03);
+}
+
+.photo-upload-area input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-text {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.upload-text strong {
+    color: var(--color-accent);
+}
+
+.photo-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.photo-preview-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.photo-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-preview-item .remove-photo {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================
+   Remove Button
+   ============================ */
+
+.vehicle-form .remove {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: 1px solid var(--color-border);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    transition: all var(--transition);
+}
+
+.vehicle-form .remove:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+    background: rgba(176, 0, 32, 0.05);
+}
+
+/* ============================
+   Submit Section
+   ============================ */
+
+.submit-section {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.submit-info p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--color-muted);
+}
+
+.submit-info strong {
+    color: var(--color-primary);
+}
+
+/* ============================
+   Buttons
+   ============================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--color-accent-hover);
+}
+
+.btn-secondary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: var(--color-primary-hover);
+}
+
+.btn-large {
+    padding: 14px 28px;
+    font-size: 1rem;
+}
+
+/* ============================
+   Status Messages
+   ============================ */
+
+.status {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+}
+
+.status:empty {
+    display: none;
+}
+
+.status.success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.status.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* ============================
+   Responsive
+   ============================ */
+
+@media (max-width: 768px) {
+    .datetime-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .vehicle-form.listing-card .row {
+        grid-template-columns: 1fr;
+    }
+
+    .submit-section {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .submit-section .btn {
+        width: 100%;
+    }
+}

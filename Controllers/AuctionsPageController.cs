@@ -101,6 +101,28 @@ namespace LastCallMotorAuctions.API.Controllers
             if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
                 return Forbid();
 
+            // First check if this is an auction group
+            var groupAuctions = await _db.AuctionGroupAuctions
+                .Where(aga => aga.AuctionGroupId == id)
+                .Include(aga => aga.Auction)
+                    .ThenInclude(a => a!.Listing)
+                .Include(aga => aga.AuctionGroup)
+                .ToListAsync();
+
+            if (groupAuctions.Any())
+            {
+                // Verify seller owns all auctions in the group
+                if (groupAuctions.Any(aga => aga.Auction?.Listing?.SellerId != userId))
+                    return Forbid();
+
+                ViewData["IsGroup"] = true;
+                ViewData["GroupId"] = id;
+                ViewData["GroupTitle"] = groupAuctions.First().AuctionGroup?.Title ?? "Auction Group";
+                ViewData["AuctionIds"] = groupAuctions.Select(aga => aga.AuctionId).ToList();
+                return View("~/Views/Auctions/Edit.cshtml");
+            }
+
+            // Fall back to single auction
             var auction = await _db.Auctions
                 .Include(a => a.Listing)
                 .FirstOrDefaultAsync(a => a.AuctionId == id);
@@ -108,6 +130,8 @@ namespace LastCallMotorAuctions.API.Controllers
             if (auction == null) return NotFound();
             if (auction.Listing == null || auction.Listing.SellerId != userId) return Forbid();
 
+            ViewData["IsGroup"] = false;
+            ViewData["AuctionId"] = id;
             return View("~/Views/Auctions/Edit.cshtml");
         }
     }

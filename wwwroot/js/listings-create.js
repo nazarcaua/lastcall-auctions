@@ -20,9 +20,11 @@ async function createVehicleForm(index) {
     container.className = 'vehicle-form listing-card';
     container.dataset.index = index;
     container.innerHTML = `
-        <h3>Vehicle ${index + 1}</h3>
-        <label>Title</label>
-        <input name="title" placeholder="e.g. 2018 Honda Civic Touring" required />
+        <h3>?? Vehicle ${index + 1}</h3>
+        <button type="button" class="remove">Remove</button>
+
+        <label>Vehicle Title</label>
+        <input name="title" placeholder="e.g. 2018 Honda Civic Touring - Low KM" required />
 
         <div class="row">
             <div>
@@ -39,26 +41,36 @@ async function createVehicleForm(index) {
             </div>
         </div>
 
-        <label>Kilometers</label>
-        <input name="mileage" type="number" min="0" />
-
-        <label>Condition Grade</label>
-        <select name="conditionGrade" required>
-            <option value="5">5 - Excellent</option>
-            <option value="4">4 - Very Good</option>
-            <option value="3">3 - Good</option>
-            <option value="2">2 - Fair</option>
-            <option value="1">1 - Poor</option>
-        </select>
+        <div class="row">
+            <div>
+                <label>Kilometers</label>
+                <input name="mileage" type="number" min="0" placeholder="e.g. 85000" />
+            </div>
+            <div>
+                <label>Condition</label>
+                <select name="conditionGrade" required>
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Very Good</option>
+                    <option value="3" selected>3 - Good</option>
+                    <option value="2">2 - Fair</option>
+                    <option value="1">1 - Poor</option>
+                </select>
+            </div>
+        </div>
 
         <label>Description</label>
-        <textarea name="description"></textarea>
+        <textarea name="description" placeholder="Describe the vehicle's features, history, and condition..."></textarea>
 
-        <label>Starting Price</label>
-        <input name="startPrice" type="number" step="0.01" required />
-
-        <label>Reserve Price (optional)</label>
-        <input name="reservePrice" type="number" step="0.01" />
+        <div class="row">
+            <div>
+                <label>Starting Price (CAD)</label>
+                <input name="startPrice" type="number" step="100" min="0" placeholder="e.g. 15000" required />
+            </div>
+            <div>
+                <label>Reserve Price (optional)</label>
+                <input name="reservePrice" type="number" step="100" min="0" placeholder="Minimum to sell" />
+            </div>
+        </div>
 
         <label>Photos (max 10, up to 5 MB each)</label>
         <div class="photo-upload-area">
@@ -66,9 +78,6 @@ async function createVehicleForm(index) {
             <div class="upload-text"><strong>Click or drag</strong> to add photos (.jpg, .png, .webp)</div>
         </div>
         <div class="photo-preview-grid" data-previews></div>
-
-        <button class="remove">Remove</button>
-        <hr />
     `;
 
     // Initialize photo file storage for this form
@@ -94,44 +103,92 @@ async function createVehicleForm(index) {
     });
 
     // Populate years
-    const years = await fetch('/api/vehicles/years').then(r => r.json());
     const yearSelect = container.querySelector('select[name="year"]');
-    years.forEach(y => {
-        const opt = document.createElement('option');
-        opt.value = y.year;
-        opt.textContent = y.year;
-        yearSelect.appendChild(opt);
-    });
+
+    // Add a placeholder option
+    const placeholderYear = document.createElement('option');
+    placeholderYear.value = '';
+    placeholderYear.textContent = 'Select Year';
+    placeholderYear.disabled = true;
+    placeholderYear.selected = true;
+    yearSelect.appendChild(placeholderYear);
+
+    try {
+        const response = await fetch('/api/vehicles/years');
+        if (!response.ok) {
+            console.error('Failed to fetch years:', response.status);
+            return container;
+        }
+        const years = await response.json();
+        console.log('Years loaded:', years.length);
+
+        years.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y.year;
+            opt.textContent = y.year;
+            yearSelect.appendChild(opt);
+        });
+    } catch (error) {
+        console.error('Error fetching years:', error);
+    }
 
     // Populate makes when year changes
     const makeSelect = container.querySelector('select[name="makeId"]');
     const modelSelect = container.querySelector('select[name="modelId"]');
 
+    // Add placeholder for make
+    const placeholderMake = document.createElement('option');
+    placeholderMake.value = '';
+    placeholderMake.textContent = 'Select Make';
+    placeholderMake.disabled = true;
+    placeholderMake.selected = true;
+    makeSelect.appendChild(placeholderMake);
+
+    // Add placeholder for model
+    const placeholderModel = document.createElement('option');
+    placeholderModel.value = '';
+    placeholderModel.textContent = 'Select Model';
+    placeholderModel.disabled = true;
+    placeholderModel.selected = true;
+    modelSelect.appendChild(placeholderModel);
+
     async function loadMakes() {
         const year = yearSelect.value;
-        const makes = await fetch(`/api/vehicles/years/${year}/makes`).then(r => r.json());
-        makeSelect.innerHTML = '';
-        makes.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.makeId;
-            opt.textContent = m.name;
-            makeSelect.appendChild(opt);
-        });
-        await loadModels();
+        if (!year) return;
+
+        try {
+            const makes = await fetch(`/api/vehicles/years/${year}/makes`).then(r => r.json());
+            makeSelect.innerHTML = '<option value="" disabled selected>Select Make</option>';
+            makes.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.makeId;
+                opt.textContent = m.name;
+                makeSelect.appendChild(opt);
+            });
+            // Reset models when year changes
+            modelSelect.innerHTML = '<option value="" disabled selected>Select Model</option>';
+        } catch (error) {
+            console.error('Error loading makes:', error);
+        }
     }
 
     async function loadModels() {
         const year = yearSelect.value;
         const makeId = makeSelect.value;
-        if (!makeId) return;
-        const models = await fetch(`/api/vehicles/years/${year}/makes/${makeId}/models`).then(r => r.json());
-        modelSelect.innerHTML = '';
-        models.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.modelId;
-            opt.textContent = m.name;
-            modelSelect.appendChild(opt);
-        });
+        if (!year || !makeId) return;
+
+        try {
+            const models = await fetch(`/api/vehicles/years/${year}/makes/${makeId}/models`).then(r => r.json());
+            modelSelect.innerHTML = '<option value="" disabled selected>Select Model</option>';
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.modelId;
+                opt.textContent = m.name;
+                modelSelect.appendChild(opt);
+            });
+        } catch (error) {
+            console.error('Error loading models:', error);
+        }
     }
 
     yearSelect.addEventListener('change', loadMakes);
@@ -141,6 +198,12 @@ async function createVehicleForm(index) {
         e.preventDefault();
         delete photoFilesByIndex[index];
         container.remove();
+        // Update empty state after removal
+        const formsCount = document.querySelectorAll('.vehicle-form').length;
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) {
+            emptyState.classList.toggle('hidden', formsCount > 0);
+        }
     });
 
     return container;
@@ -268,6 +331,7 @@ async function uploadPhotosForListing(listingId, files) {
         const payload = {
             auctionGroupTitle: document.getElementById('groupTitle').value || null,
             vehicles: vehiclesData,
+            startTime: document.getElementById('groupStartTime').value ? new Date(document.getElementById('groupStartTime').value).toISOString() : null,
             endTime: document.getElementById('groupEndTime').value ? new Date(document.getElementById('groupEndTime').value).toISOString() : null
         };
 
@@ -333,4 +397,69 @@ async function uploadPhotosForListing(listingId, files) {
 
     // Add first form by default
     await addForm();
+
+    // Update empty state visibility
+    function updateEmptyState() {
+        const formsCount = document.querySelectorAll('.vehicle-form').length;
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) {
+            emptyState.classList.toggle('hidden', formsCount > 0);
+        }
+    }
+
+    // Initial empty state update
+    updateEmptyState();
+
+    // Schedule preview update
+    function updateSchedulePreview() {
+        const startInput = document.getElementById('groupStartTime');
+        const endInput = document.getElementById('groupEndTime');
+        const preview = document.getElementById('schedulePreview');
+        const previewText = document.getElementById('scheduleText');
+
+        if (!endInput.value) {
+            preview.classList.remove('active');
+            previewText.textContent = 'Set the end time to see auction duration';
+            return;
+        }
+
+        const startTime = startInput.value ? new Date(startInput.value) : new Date();
+        const endTime = new Date(endInput.value);
+
+        if (endTime <= startTime) {
+            preview.classList.remove('active');
+            previewText.textContent = '?? End time must be after start time';
+            return;
+        }
+
+        const diffMs = endTime - startTime;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        let durationText = '';
+        if (diffDays > 0) durationText += `${diffDays} day${diffDays > 1 ? 's' : ''} `;
+        if (diffHours > 0) durationText += `${diffHours} hour${diffHours > 1 ? 's' : ''} `;
+        if (diffMinutes > 0 && diffDays === 0) durationText += `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+
+        const startLabel = startInput.value ? 
+            `Starts: ${startTime.toLocaleString()}` : 
+            'Starts: Immediately';
+        const endLabel = `Ends: ${endTime.toLocaleString()}`;
+
+        preview.classList.add('active');
+        previewText.innerHTML = `<strong>${durationText.trim()}</strong> — ${startLabel} | ${endLabel}`;
+    }
+
+    document.getElementById('groupStartTime').addEventListener('change', updateSchedulePreview);
+    document.getElementById('groupEndTime').addEventListener('change', updateSchedulePreview);
+
+    // Update empty state on form changes
+    updateEmptyState();
+
+    // Override the add form to update empty state
+    const originalAddBtn = document.getElementById('addBtn');
+    originalAddBtn.addEventListener('click', () => {
+        setTimeout(updateEmptyState, 100);
+    });
 })();
