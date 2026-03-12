@@ -72,6 +72,12 @@
                             <span class="detail-value">@timeLeftText</span>
                         </div>
                     </div>
+
+                    <div class="vehicle-card-actions">
+                        <a href="/Browse/Auction/@a.AuctionId" class="btn accent">
+                            @(a.EndTime > now ? "Place Bid" : "View Results")
+                        </a>
+                    </div>
                 </div>
             </div>
         }

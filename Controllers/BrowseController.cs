@@ -46,5 +46,16 @@ namespace LastCallMotorAuctions.API.Controllers
 
             return View(wrapper);
         }
+
+        /// <summary>
+        /// Single auction bidding page with real-time updates.
+        /// </summary>
+        [HttpGet("[controller]/[action]/{id:int}")]
+        public IActionResult Auction(int id)
+        {
+            // The view loads auction data via JavaScript/API
+            ViewData["AuctionId"] = id;
+            return View();
+        }
     }
 }

@@ -3,27 +3,88 @@
     ViewData["Title"] = "Create New Auction Group";
 }
 
+<link rel="stylesheet" href="~/css/create-listing.css" asp-append-version="true" />
+
 <section class="page create-listings-page">
-    <h1>Create Auction Group</h1>
-    <p class="muted">Enter an auction title, add one or more vehicles, then set the auction end date and submit.</p>
+    <div class="page-header">
+        <h1>Create Auction Group</h1>
+        <p class="subtitle">Set up your auction details, add vehicles, and schedule when bidding begins.</p>
+    </div>
 
-    <label>Auction Title</label>
-    <input id="groupTitle" placeholder="e.g. Spring Classic Auction - Lot 12" />
+    <!-- Auction Group Settings -->
+    <div class="settings-card">
+        <div class="card-header">
+            <span class="card-icon">📋</span>
+            <div>
+                <h2>Auction Settings</h2>
+                <p class="card-description">Configure the auction group title and schedule.</p>
+            </div>
+        </div>
 
-    <div class="group-auction-fields row" style="margin-top:10px; gap:10px;">
-        <div>
-            <label>Auction End (local)</label>
-            <input id="groupEndTime" type="datetime-local" />
+        <div class="form-group">
+            <label for="groupTitle">Auction Title</label>
+            <input id="groupTitle" type="text" class="form-input" placeholder="e.g. Spring Classic Auction - Lot 12" />
+            <span class="form-hint">Give your auction a memorable name that buyers will see.</span>
+        </div>
+
+        <div class="datetime-grid">
+            <div class="form-group">
+                <label for="groupStartTime">
+                    <span class="label-icon">🕐</span> Start Date & Time
+                </label>
+                <input id="groupStartTime" type="datetime-local" class="form-input" />
+                <span class="form-hint">When bidding opens. Leave empty to start immediately.</span>
+            </div>
+
+            <div class="form-group">
+                <label for="groupEndTime">
+                    <span class="label-icon">🏁</span> End Date & Time
+                </label>
+                <input id="groupEndTime" type="datetime-local" class="form-input" required />
+                <span class="form-hint">When bidding closes. Required field.</span>
+            </div>
+        </div>
+
+        <div class="schedule-preview" id="schedulePreview">
+            <span class="preview-icon">📅</span>
+            <span id="scheduleText">Set the end time to see auction duration</span>
         </div>
     </div>
 
-    <div id="formsRoot" class="forms-root"></div>
+    <!-- Vehicles Section -->
+    <div class="vehicles-section">
+        <div class="section-header">
+            <div>
+                <h2>Vehicles</h2>
+                <p class="section-description">Add one or more vehicles to this auction group.</p>
+            </div>
+            <button id="addBtn" class="btn btn-secondary">
+                <span class="btn-icon">+</span> Add Vehicle
+            </button>
+        </div>
 
-    <div class="actions">
-        <button id="addBtn" class="btn">Add another vehicle</button>
-        <button id="submitBtn" class="btn">Create Auction Group</button>
+        <div id="formsRoot" class="forms-root">
+            <!-- Vehicle forms will be inserted here -->
+        </div>
+
+        <div id="emptyState" class="empty-state">
+            <div class="empty-icon">🚗</div>
+            <h3>No vehicles added yet</h3>
+            <p>Click "Add Vehicle" to add your first vehicle to this auction.</p>
+        </div>
     </div>
 
+    <!-- Submit Section -->
+    <div class="submit-section">
+        <div class="submit-info">
+            <p><strong>Ready to go live?</strong> Review your auction details and vehicles above, then click submit.</p>
+        </div>
+        <button id="submitBtn" class="btn btn-primary btn-large">
+            <span class="btn-icon">🚀</span> Create Auction Group
+        </button>
+    </div>
+
+    <!-- Status Messages -->
     <div id="status" class="status"></div>
 </section>
 

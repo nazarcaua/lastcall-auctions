@@ -1,0 +1,155 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Policies";
+}
+
+<link rel="stylesheet" href="~/css/policies.css" asp-append-version="true" />
+
+<div class="policies-container">
+    <h1>Platform Policies</h1>
+    
+    <div class="policies-grid">
+        <!-- Left Column -->
+        <div class="policy-section">
+            <h2>User Agreement</h2>
+            <p>
+                By using LastCall Motor Auctions, you agree to comply with all applicable laws and regulations. 
+                All users must be at least 18 years of age. You are responsible for maintaining the confidentiality 
+                of your account information and password. You agree not to use the platform for illegal activities, 
+                fraud, or any misrepresentation.
+            </p>
+            <ul>
+                <li>Users must provide accurate and truthful information</li>
+                <li>You are responsible for all activities under your account</li>
+                <li>Account sharing is prohibited</li>
+                <li>Violation of terms may result in account suspension</li>
+            </ul>
+        </div>
+
+        <!-- Right Column -->
+        <div class="policy-section">
+            <h2>Auction Rules</h2>
+            <p>
+                All auctions on our platform operate under fair and transparent rules. By placing a bid, you commit 
+                to purchasing the item if you win. Bids cannot be withdrawn except in cases of clear typographical errors 
+                reported within 1 hour of placement. Reserve prices, when set, must be met for the sale to be binding.
+            </p>
+            <ul>
+                <li>All bids are binding and final</li>
+                <li>Automatic bid extension if bids received in final minutes</li>
+                <li>Payment must be completed within 48 hours of auction end</li>
+                <li>Non-payment may result in permanent account suspension</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="policies-grid">
+        <!-- Left Column -->
+        <div class="policy-section">
+            <h2>Payment & Transaction Policy</h2>
+            <p>
+                All payments must be made securely through our approved payment methods. We accept credit cards, 
+                bank transfers, and digital wallets. A processing fee of 2.5% applies to all transactions. 
+                Refunds are only issued if the seller cannot deliver the item or in cases of fraud.
+            </p>
+            <ul>
+                <li>Payment required within 48 hours of winning bid</li>
+                <li>All fees are non-refundable except for cancellations by the seller</li>
+                <li>Secure payment processing with SSL encryption</li>
+                <li>Dispute resolution available for unauthorized transactions</li>
+            </ul>
+        </div>
+
+        <!-- Right Column -->
+        <div class="policy-section">
+            <h2>Seller Responsibilities</h2>
+            <p>
+                Sellers are responsible for accurately describing items and providing clear photos. All vehicles must 
+                be sold as-is unless otherwise specified. Misrepresentation of items may result in account suspension 
+                and legal action. Sellers must ship items within 5 business days of payment receipt.
+            </p>
+            <ul>
+                <li>Accurate item descriptions are mandatory</li>
+                <li>Minimum 3 clear photos required per listing</li>
+                <li>Shipping must occur within 5 business days</li>
+                <li>Refunds issued if item doesn't match description</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="policies-grid">
+        <!-- Left Column -->
+        <div class="policy-section">
+            <h2>Buyer Protection</h2>
+            <p>
+                Buyers are protected by our comprehensive buyer protection program. If you receive an item that differs 
+                significantly from the description or arrives damaged, you may file a claim within 30 days. We'll mediate 
+                disputes and ensure fair resolution. All transactions are covered by our fraud protection guarantee.
+            </p>
+            <ul>
+                <li>30-day window to report issues with received items</li>
+                <li>Full refund if item significantly differs from description</li>
+                <li>Fraud protection on all transactions</li>
+                <li>Free shipping label for returns when applicable</li>
+            </ul>
+        </div>
+
+        <!-- Right Column -->
+        <div class="policy-section">
+            <h2>Privacy & Data Protection</h2>
+            <p>
+                Your personal information is protected under our strict privacy policy. We do not sell or share your 
+                data with third parties without explicit consent. All information is encrypted and stored securely. 
+                You have the right to access, modify, or delete your personal information at any time.
+            </p>
+            <ul>
+                <li>SSL encryption for all data transmission</li>
+                <li>Personal information never sold to third parties</li>
+                <li>GDPR and CCPA compliant data handling</li>
+                <li>You can request data deletion at any time</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="policies-grid">
+        <!-- Left Column -->
+        <div class="policy-section">
+            <h2>Prohibited Items</h2>
+            <p>
+                Certain items cannot be sold on our platform. This includes vehicles with salvage titles without 
+                explicit disclosure, stolen property, counterfeit items, and vehicles with active liens. All vehicles 
+                must be street-legal or clearly marked as off-road use only.
+            </p>
+            <ul>
+                <li>No stolen or illegally obtained vehicles</li>
+                <li>No counterfeit parts or accessories</li>
+                <li>Salvage titles must be clearly disclosed</li>
+                <li>Vehicles with liens cannot be sold unless claim is satisfied</li>
+            </ul>
+        </div>
+
+        <!-- Right Column -->
+        <div class="policy-section">
+            <h2>Dispute Resolution</h2>
+            <p>
+                If a dispute arises between buyers and sellers, our mediation team will investigate and render a decision 
+                based on the evidence provided. Both parties have 14 days to submit documentation. Final decisions are 
+                binding and enforceable. For legal disputes, arbitration will be used before litigation.
+            </p>
+            <ul>
+                <li>14-day period to submit evidence</li>
+                <li>Neutral third-party investigation</li>
+                <li>Binding arbitration for unresolved disputes</li>
+                <li>Appeal process available within 30 days</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="policies-footer">
+        <p><strong>Last Updated:</strong> @DateTime.Now.ToString("MMMM dd, yyyy")</p>
+        <p>These policies are subject to change at any time. Users will be notified of significant changes via email.</p>
+        <p>For questions about our policies, please <a href="/Contact">contact our support team</a>.</p>
+    </div>
+</div>
+
+<link rel="stylesheet" href="~/css/policies.css" asp-append-version="true" />

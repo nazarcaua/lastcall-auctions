@@ -1,0 +1,220 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Vehicle Value Estimator";
+}
+
+<link rel="stylesheet" href="~/css/vehicle-value.css" asp-append-version="true" />
+
+<div class="vehicle-value-page">
+    <div class="page-header">
+        <h1>Vehicle Value Estimator</h1>
+        <p class="subtitle">Get an accurate estimate of your vehicle's worth, including repair cost analysis for your region in Canada.</p>
+    </div>
+
+    <div class="estimator-container">
+        <!-- Vehicle Selection Form -->
+        <div class="form-section">
+            <h2>Vehicle Information</h2>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="yearSelect">Year</label>
+                    <select id="yearSelect" class="form-control" required>
+                        <option value="">Select Year</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="makeSelect">Make</label>
+                    <select id="makeSelect" class="form-control" disabled required>
+                        <option value="">Select Make</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modelSelect">Model</label>
+                    <select id="modelSelect" class="form-control" disabled required>
+                        <option value="">Select Model</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="mileageInput">Mileage (km)</label>
+                    <input type="number" id="mileageInput" class="form-control" placeholder="e.g., 85000" min="0" max="1000000" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="provinceSelect">Province/Territory</label>
+                <select id="provinceSelect" class="form-control" required>
+                    <option value="">Select Province</option>
+                    <option value="AB">Alberta</option>
+                    <option value="BC">British Columbia</option>
+                    <option value="MB">Manitoba</option>
+                    <option value="NB">New Brunswick</option>
+                    <option value="NL">Newfoundland and Labrador</option>
+                    <option value="NS">Nova Scotia</option>
+                    <option value="NT">Northwest Territories</option>
+                    <option value="NU">Nunavut</option>
+                    <option value="ON">Ontario</option>
+                    <option value="PE">Prince Edward Island</option>
+                    <option value="QC">Quebec</option>
+                    <option value="SK">Saskatchewan</option>
+                    <option value="YT">Yukon</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Issues Section -->
+        <div class="form-section">
+            <h2>Vehicle Issues</h2>
+            <p class="section-description">Add any known issues with your vehicle to get a more accurate valuation and repair cost estimate.</p>
+
+            <div id="issuesList" class="issues-list">
+                <!-- Issues will be added here dynamically -->
+            </div>
+
+            <div class="add-issue-form">
+                <div class="issue-form-row">
+                    <div class="form-group">
+                        <label for="issueCategorySelect">Category</label>
+                        <select id="issueCategorySelect" class="form-control">
+                            <option value="">Select Category</option>
+                            <option value="Engine">Engine</option>
+                            <option value="Transmission">Transmission</option>
+                            <option value="Brakes">Brakes</option>
+                            <option value="Suspension">Suspension</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Body">Body/Exterior</option>
+                            <option value="Interior">Interior</option>
+                            <option value="AC/Heating">AC/Heating</option>
+                            <option value="Exhaust">Exhaust System</option>
+                            <option value="Tires">Tires/Wheels</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="issueSeveritySelect">Severity</label>
+                        <select id="issueSeveritySelect" class="form-control">
+                            <option value="Minor">Minor</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Severe">Severe</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="issueDescriptionInput">Description</label>
+                    <textarea id="issueDescriptionInput" class="form-control" rows="2" placeholder="Describe the issue (e.g., 'Check engine light is on', 'Transmission slipping between gears')"></textarea>
+                </div>
+
+                <button type="button" id="addIssueBtn" class="btn btn-secondary">
+                    <span class="btn-icon">+</span> Add Issue
+                </button>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-actions">
+            <button type="button" id="estimateBtn" class="btn btn-primary btn-large">
+                Get Value Estimate
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Section (Hidden by default) -->
+    <div id="resultsSection" class="results-section hidden">
+        <div class="results-header">
+            <h2>Valuation Results</h2>
+            <span id="vehicleTitle" class="vehicle-title"></span>
+        </div>
+
+        <!-- Value Summary -->
+        <div class="results-grid">
+            <div class="result-card value-card">
+                <h3>Estimated Value</h3>
+                <div class="value-display">
+                    <span class="currency">CAD</span>
+                    <span id="estimatedValue" class="value-amount">$0</span>
+                </div>
+                <div class="value-range">
+                    Range: <span id="valueRangeLow">$0</span> - <span id="valueRangeHigh">$0</span>
+                </div>
+                <div class="value-breakdown">
+                    <div class="breakdown-item">
+                        <span>Base Value:</span>
+                        <span id="baseValue">$0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>Mileage Adjustment:</span>
+                        <span id="mileageAdjustment">$0</span>
+                    </div>
+                    <div class="breakdown-item deduction">
+                        <span>Issues Deduction:</span>
+                        <span id="issuesDeduction">-$0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-card repair-card">
+                <h3>Total Repair Cost</h3>
+                <div class="value-display repair-cost">
+                    <span class="currency">CAD</span>
+                    <span id="totalRepairCost" class="value-amount">$0</span>
+                </div>
+                <p class="region-note">
+                    <span class="region-icon">📍</span>
+                    Prices for <span id="regionName">your region</span>
+                </p>
+            </div>
+
+            <div class="result-card potential-card">
+                <h3>Value After Repairs</h3>
+                <div class="value-display potential-value">
+                    <span class="currency">CAD</span>
+                    <span id="valueAfterRepairs" class="value-amount">$0</span>
+                </div>
+                <p id="recommendation" class="recommendation"></p>
+            </div>
+        </div>
+
+        <!-- Repair Estimates Table -->
+        <div class="repair-details" id="repairDetailsSection">
+            <h3>Repair Cost Breakdown</h3>
+            <div class="table-responsive">
+                <table class="repair-table">
+                    <thead>
+                        <tr>
+                            <th>Issue</th>
+                            <th>Severity</th>
+                            <th>Parts</th>
+                            <th>Labor</th>
+                            <th>Total</th>
+                            <th>Time Est.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="repairTableBody">
+                        <!-- Repair rows will be added here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="results-actions">
+            <button type="button" id="newEstimateBtn" class="btn btn-secondary">Start New Estimate</button>
+            <button type="button" id="printResultsBtn" class="btn btn-outline">Print Results</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p>Calculating vehicle value...</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/vehicle-value.js" asp-append-version="true"></script>
+}

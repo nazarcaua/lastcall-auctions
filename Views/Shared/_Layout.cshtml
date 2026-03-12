@@ -17,6 +17,8 @@
             <div class="nav-links">
                 <a href="/">Home</a>
                 <a href="/Auctions">Auctions</a>
+                <a href="/Home/VehicleValue">Vehicle Value</a>
+                <a href="/Home/Policies">Policies</a>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     @if (User.IsInRole("Seller"))

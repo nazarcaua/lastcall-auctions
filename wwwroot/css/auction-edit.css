@@ -1,0 +1,623 @@
+/* ============================
+   Auction Edit Page Styles
+   ============================ */
+
+.edit-auction-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    transition: color var(--transition);
+}
+
+.back-link:hover {
+    color: var(--color-primary);
+}
+
+.edit-auction-page .page-header {
+    margin-bottom: 28px;
+}
+
+.edit-auction-page .page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.edit-auction-page .subtitle {
+    color: var(--color-muted);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* ============================
+   Loading & Error States
+   ============================ */
+
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--color-border);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+.error-state h2 {
+    color: var(--color-danger);
+    margin-bottom: 12px;
+}
+
+/* ============================
+   Settings Card
+   ============================ */
+
+.settings-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 28px;
+}
+
+.card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.card-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.card-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.card-description {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ============================
+   Form Elements
+   ============================ */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 8px;
+}
+
+.label-icon {
+    font-size: 1rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    margin-top: 6px;
+}
+
+.datetime-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.schedule-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    color: var(--color-muted);
+    margin-top: 8px;
+}
+
+.schedule-preview.active {
+    background: #dbeafe;
+    color: var(--color-accent);
+}
+
+.preview-icon {
+    font-size: 1.1rem;
+}
+
+/* ============================
+   Vehicles Section
+   ============================ */
+
+.vehicles-section {
+    margin-bottom: 28px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-description {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin: 4px 0 0 0;
+}
+
+.vehicles-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ============================
+   Vehicle Card
+   ============================ */
+
+.vehicle-edit-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.vehicle-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.vehicle-card-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.vehicle-number {
+    width: 28px;
+    height: 28px;
+    background: var(--color-accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+.vehicle-card-body {
+    padding: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.vehicle-edit-card label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.vehicle-edit-card input,
+.vehicle-edit-card select,
+.vehicle-edit-card textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.vehicle-edit-card input:focus,
+.vehicle-edit-card select:focus,
+.vehicle-edit-card textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.vehicle-edit-card textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ============================
+   Photos Section
+   ============================ */
+
+.photos-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.photos-section h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--color-primary);
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-bg);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-item .delete-photo-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+
+.photo-item:hover .delete-photo-btn {
+    opacity: 1;
+}
+
+.photo-item .delete-photo-btn:hover {
+    background: var(--color-danger);
+}
+
+.photo-item.new-photo {
+    border: 2px solid var(--color-success);
+}
+
+.photo-upload-zone {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+}
+
+.photo-upload-zone:hover,
+.photo-upload-zone.dragover {
+    border-color: var(--color-accent);
+    background: rgba(37, 99, 235, 0.03);
+}
+
+.photo-upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-text {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.upload-text strong {
+    color: var(--color-accent);
+}
+
+/* ============================
+   Pricing Section
+   ============================ */
+
+.pricing-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.pricing-section h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--color-primary);
+}
+
+/* ============================
+   Save Section
+   ============================ */
+
+.save-section {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+}
+
+.save-info {
+    flex: 1;
+}
+
+.save-info p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--color-muted);
+}
+
+.save-info p.success {
+    color: var(--color-success);
+}
+
+.save-info p.error {
+    color: var(--color-danger);
+}
+
+.save-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* ============================
+   Buttons
+   ============================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--color-accent-hover);
+}
+
+.btn-secondary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: var(--color-primary-hover);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+}
+
+.btn-outline:hover {
+    background: var(--color-bg);
+}
+
+.btn-large {
+    padding: 14px 28px;
+    font-size: 1rem;
+}
+
+.btn-danger {
+    background: transparent;
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-danger:hover {
+    background: var(--color-danger);
+    color: white;
+}
+
+/* ============================
+   Responsive
+   ============================ */
+
+@media (max-width: 768px) {
+    .datetime-grid,
+    .form-row,
+    .form-row-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .save-section {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .save-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .save-actions .btn {
+        width: 100%;
+    }
+
+    .vehicle-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+
+/* ============================
+   New Vehicle Styles
+   ============================ */
+
+.vehicle-edit-card.new-vehicle {
+    border: 2px solid var(--color-success);
+}
+
+.vehicle-edit-card.new-vehicle .vehicle-card-header {
+    background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+}
+
+.new-badge {
+    background: var(--color-success);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-remove-vehicle {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    flex-shrink: 0;
+}
+
+.btn-remove-vehicle:hover {
+    background: var(--color-danger);
+    color: white;
+}
+
+.photo-item.new-photo {
+    border: 2px solid var(--color-success);
+}
