@@ -131,7 +131,7 @@
                                 <td>@timeLeftText</td>
                                 <td>@(g.Auctions.First().Status?.Name ?? $"StatusId: {g.Auctions.First().StatusId}")</td>
                                 <td>
-                                    <a class="link" href="/Browse/Detail/@(g.AuctionGroupId ?? g.GroupKey)">View</a>
+                                    <a class="link" href="/Auctions/Detail/@(g.AuctionGroupId ?? g.GroupKey)">View</a>
                                 </td>
                             </tr>
                         }
@@ -179,7 +179,7 @@
                                 <td>@a.EndTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
                                 <td>@(a.Status?.Name ?? $"StatusId: {a.StatusId}")</td>
                                 <td>
-                                    <a class="link" href="/Browse/Detail/@a.AuctionId">View</a>
+                                    <a class="link" href="/Auctions/Detail/@a.AuctionId">View</a>
                                 </td>
                             </tr>
                         }

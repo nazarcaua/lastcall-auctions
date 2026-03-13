@@ -1,7 +1,9 @@
 ﻿@model IEnumerable<LastCallMotorAuctions.API.DTOs.AuctionBrowseDto>
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Auctions";
+    ViewData["Title"] = "Browse Auctions";
+    var watchlistIds = (HashSet<int>)(ViewBag.WatchlistIds ?? new HashSet<int>());
+    var isBuyer = (bool)(ViewBag.IsBuyer ?? false);
 }
 
 <section class="page">
@@ -21,21 +23,34 @@
                 var title = first.AuctionGroupTitle ?? first.Title;
                 var ends = group.Min(a => a.EndTime);
                 var firstPhoto = group.SelectMany(a => a.PhotoUrls).FirstOrDefault();
+                var firstAuctionId = first.AuctionId;
+                var isWatchlisted = group.Any(a => watchlistIds.Contains(a.AuctionId));
 
                 <article class="card">
-                    @if (firstPhoto != null)
-                    {
-                        <img class="card-photo" src="@firstPhoto" alt="@title" />
-                    }
-                    else
-                    {
-                        <div class="card-photo-placeholder">No photos</div>
-                    }
+                    <div class="card-photo-wrap">
+                        @if (firstPhoto != null)
+                        {
+                            <img class="card-photo" src="@firstPhoto" alt="@title" />
+                        }
+                        else
+                        {
+                            <div class="card-photo-placeholder">No photos</div>
+                        }
+                        @if (isBuyer)
+                        {
+                            <button class="watchlist-icon-btn @(isWatchlisted ? "active" : "")"
+                                    data-auction-id="@firstAuctionId"
+                                    title="@(isWatchlisted ? "Remove from watchlist" : "Add to watchlist")"
+                                    onclick="toggleWatchlist(this)">
+                                @(isWatchlisted ? "♥" : "♡")
+                            </button>
+                        }
+                    </div>
                     <div class="card-body">
                         <h3>@title</h3>
                         <p>@(group.Count() == 1 ? $"{first.Year} {first.MakeName} {first.ModelName}" : $"{group.Count()} vehicles")</p>
                         <p>@(ends > DateTime.UtcNow ? $"Ends {ends.ToLocalTime():g}" : "Ended")</p>
-                        <a class="btn small" href="/Browse/Detail/@(group.Key)">View auction</a>
+                        <a class="btn small" href="/Auctions/Detail/@(group.Key)">View auction</a>
                     </div>
                 </article>
             }

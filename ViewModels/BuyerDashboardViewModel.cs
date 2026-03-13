@@ -14,7 +14,7 @@ namespace LastCallMotorAuctions.API.ViewModels
         public string BuyerName { get; set; } = "";
     }
 
-    public class Favourite { public int Id { get; set; } public int AuctionId { get; set; } public string Title { get; set; } = ""; }
     public class Transaction { public int Id { get; set; } public int AuctionId { get; set; } public decimal Amount { get; set; } public DateTime Timestamp { get; set; } }
     public class SellerRatingDto { public int SellerId { get; set; } public string SellerName { get; set; } = ""; public int Rating { get; set; } public string Comment { get; set; } = ""; }
 }
+

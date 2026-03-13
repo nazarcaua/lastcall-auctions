@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using LastCallMotorAuctions.API.Services;
+using LastCallMotorAuctions.API.DTOs;
+using LastCallMotorAuctions.API.Models;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using LastCallMotorAuctions.API.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -13,18 +16,20 @@ namespace LastCallMotorAuctions.API.Controllers
     {
         private readonly IAuctionService _auctionService;
         private readonly ApplicationDbContext _db;
+        private readonly UserManager<User> _userManager;
 
-        public AuctionsPageController(IAuctionService auctionService, ApplicationDbContext db)
+        public AuctionsPageController(IAuctionService auctionService, ApplicationDbContext db, UserManager<User> userManager)
         {
             _auctionService = auctionService;
             _db = db;
+            _userManager = userManager;
         }
 
         [HttpGet("/Auctions")]
         public async Task<IActionResult> Index()
         {
             var list = await _auctionService.GetActiveAuctionAsync();
-            // The view file is located at Views/Auctions/Index.cshtml, not Views/AuctionsPage/Index.cshtml
+            await SetWatchlistViewBag();
             return View("~/Views/Auctions/Index.cshtml", list);
         }
 
@@ -133,6 +138,59 @@ namespace LastCallMotorAuctions.API.Controllers
             ViewData["IsGroup"] = false;
             ViewData["AuctionId"] = id;
             return View("~/Views/Auctions/Edit.cshtml");
+        }
+
+        [HttpGet("/Auctions/Detail/{id:int}")]
+        public async Task<IActionResult> Detail(int id)
+        {
+            var group = await _auctionService.GetAuctionGroupByIdAsync(id);
+            if (group != null && group.Auctions.Count > 0)
+            {
+                await SetWatchlistViewBag();
+                return View("~/Views/Auctions/GroupDetail.cshtml", group);
+            }
+
+            var auction = await _auctionService.GetAuctionByIdAsync(id);
+            if (auction == null)
+                return NotFound();
+
+            var wrapper = new AuctionGroupDetailDto
+            {
+                AuctionGroupId = auction.AuctionGroupId ?? auction.AuctionId,
+                Title = auction.AuctionGroupTitle ?? auction.Title,
+                CreatedAt = auction.StartTime,
+                Auctions = new List<AuctionBrowseDto> { auction }
+            };
+
+            await SetWatchlistViewBag();
+            return View("~/Views/Auctions/GroupDetail.cshtml", wrapper);
+        }
+
+        [HttpGet("/Auctions/Auction/{id:int}")]
+        public IActionResult Auction(int id)
+        {
+            ViewData["AuctionId"] = id;
+            return View("~/Views/Auctions/Auction.cshtml");
+        }
+
+        private async Task SetWatchlistViewBag()
+        {
+            var isBuyer = User.IsInRole("Buyer");
+            ViewBag.IsBuyer = isBuyer;
+            ViewBag.WatchlistIds = new HashSet<int>();
+
+            if (!isBuyer) return;
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return;
+
+            var ids = await _db.Favourites
+                .AsNoTracking()
+                .Where(f => f.UserId == user.Id)
+                .Select(f => f.AuctionId)
+                .ToListAsync();
+
+            ViewBag.WatchlistIds = new HashSet<int>(ids);
         }
     }
 }

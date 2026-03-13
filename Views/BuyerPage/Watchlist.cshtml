@@ -1,0 +1,97 @@
+@using LastCallMotorAuctions.API.Models
+@model List<Favourite>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Watchlist";
+    var now = (DateTime)ViewBag.Now;
+    var watchlistHighestBids = (Dictionary<int, decimal>)ViewBag.WatchlistHighestBids;
+}
+
+<div class="dashboard-header">
+    <h1>Watchlist</h1>
+    <p class="muted">Auctions you are keeping an eye on.</p>
+</div>
+
+<div class="buyer-dashboard">
+
+    <aside class="buyer-sidebar">
+        <div class="buyer-sidebar-title">Navigation</div>
+        <nav class="buyer-sidebar-nav">
+            <a href="/Buyer/Dashboard">Dashboard</a>
+            <a href="/Buyer/Watchlist" class="active">Watchlist</a>
+            <span class="disabled">Won Auctions</span>
+            <span class="disabled">Payments / Pre-Auth</span>
+        </nav>
+    </aside>
+
+    <div class="buyer-content">
+
+        <div class="section">
+            <div class="section-header">
+                <h2>My Watchlist</h2>
+                <p class="muted">@Model.Count auction@(Model.Count == 1 ? "" : "s") saved.</p>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="buyer-empty-state">
+                    Nothing on your watchlist yet. Hit <strong>♡ Watch</strong> on any auction to save it here.
+                    <br /><br /><a class="link" href="/Auctions">Browse live auctions</a>
+                </div>
+            }
+            else
+            {
+                <div class="watchlist-grid">
+                    @foreach (var item in Model)
+                    {
+                        var wa = item.Auction;
+                        if (wa == null) continue;
+
+                        var wTitle = wa.Listing != null
+                            ? $"{wa.Listing.Year} {wa.Listing.Make?.Name ?? ""} {wa.Listing.Model?.Name ?? ""}".Trim()
+                            : $"Auction #{item.AuctionId}";
+
+                        var wCurrentBid = watchlistHighestBids.GetValueOrDefault(item.AuctionId);
+                        var wIsActive = wa.EndTime > now;
+                        var wTimeLeft = wa.EndTime - now;
+
+                        string wTimeLeftText;
+                        if (!wIsActive)
+                            wTimeLeftText = "Ended";
+                        else if (wTimeLeft.TotalDays >= 1)
+                            wTimeLeftText = $"{(int)wTimeLeft.TotalDays}d {wTimeLeft.Hours}h";
+                        else if (wTimeLeft.TotalHours >= 1)
+                            wTimeLeftText = $"{(int)wTimeLeft.TotalHours}h {wTimeLeft.Minutes}m";
+                        else
+                            wTimeLeftText = $"{wTimeLeft.Minutes}m";
+
+                        var wStatusCss = wIsActive ? "badge active" : "badge ended";
+                        var wStatusText = wIsActive ? (wa.Status?.Name ?? "Active") : "Ended";
+
+                        <div class="watchlist-card">
+                            <div class="watchlist-card-info">
+                                <div class="watchlist-card-title">@wTitle</div>
+                                <div class="watchlist-card-meta">
+                                    <span class="@wStatusCss">@wStatusText</span>
+                                    <span class="muted">@wTimeLeftText</span>
+                                    <span>@(wCurrentBid > 0 ? $"${wCurrentBid:N2}" : "No bids")</span>
+                                </div>
+                            </div>
+                            <div class="watchlist-card-actions">
+                                <a class="link" href="/Auctions/Detail/@item.AuctionId">View</a>
+                                <span class="sep">|</span>
+                                <form method="post" action="/Buyer/Watchlist/Toggle/@item.AuctionId" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="returnUrl" value="/Buyer/Watchlist" />
+                                    <button type="submit" class="delete-btn">Remove</button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+</div>

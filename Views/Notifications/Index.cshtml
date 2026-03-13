@@ -1,0 +1,40 @@
+@using LastCallMotorAuctions.API.Models
+@model List<Notification>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="dashboard-header">
+    <h1>Notifications</h1>
+    <p class="muted">Your alerts and updates.</p>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <h2>All Notifications</h2>
+        <p class="muted">@Model.Count notification@(Model.Count == 1 ? "" : "s") total.</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="buyer-empty-state">No notifications yet.</div>
+    }
+    else
+    {
+        <div class="notification-list">
+            @foreach (var n in Model)
+            {
+                <div class="notification-item@(n.IsRead ? "" : " unread")">
+                    <div class="notification-title">@n.Title</div>
+                    @if (!string.IsNullOrEmpty(n.Message))
+                    {
+                        <div class="notification-message">@n.Message</div>
+                    }
+                    <div class="notification-time">@n.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</div>
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,146 @@
+@using LastCallMotorAuctions.API.Models
+@using LastCallMotorAuctions.API.ViewModels
+@model BuyerDashboardViewModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Buyer Dashboard";
+    var now = (DateTime)ViewBag.Now;
+    var currentHighestBids = (Dictionary<int, decimal>)ViewBag.CurrentHighestBids;
+    var myHighestBids = (Dictionary<int, decimal>)ViewBag.MyHighestBids;
+}
+
+<div class="dashboard-header">
+    <h1>Buyer Dashboard</h1>
+    <p class="muted">Welcome back, @Model.BuyerName! Track your bids and auction activity.</p>
+</div>
+
+<div class="buyer-dashboard">
+
+    <aside class="buyer-sidebar">
+        <div class="buyer-sidebar-title">Navigation</div>
+        <nav class="buyer-sidebar-nav">
+            <a href="/Buyer/Dashboard" class="active">Dashboard</a>
+            <a href="/Buyer/Watchlist">Watchlist</a>
+            <span class="disabled">Won Auctions</span>
+            <span class="disabled">Payments / Pre-Auth</span>
+        </nav>
+    </aside>
+
+    <div class="buyer-content">
+
+        <div class="buyer-kpi-grid">
+            <div class="buyer-kpi-card">
+                <div class="buyer-kpi-label">Active Bids</div>
+                <div class="buyer-kpi-value">@ViewBag.ActiveBidCount</div>
+                <div class="card-sub">Live auctions</div>
+            </div>
+            <div class="buyer-kpi-card">
+                <div class="buyer-kpi-label">Watchlist</div>
+                <div class="buyer-kpi-value">@ViewBag.WatchlistCount</div>
+                <div class="card-sub">Saved auctions</div>
+            </div>
+            <div class="buyer-kpi-card">
+                <div class="buyer-kpi-label">Won</div>
+                <div class="buyer-kpi-value">@ViewBag.WonCount</div>
+                <div class="card-sub">Auctions won</div>
+            </div>
+            <div class="buyer-kpi-card">
+                <div class="buyer-kpi-label">Alerts</div>
+                <div class="buyer-kpi-value">@ViewBag.AlertCount</div>
+                <div class="card-sub">Unread notifications</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>My Bids</h2>
+                <p class="muted">All auctions you have placed bids on.</p>
+            </div>
+
+            @{
+                var auctionIds = Model.BidList.Select(b => b.AuctionId).Distinct().ToList();
+            }
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Current Bid</th>
+                        <th>Your Bid</th>
+                        <th>Time Left</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!auctionIds.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="muted" style="text-align:center; padding: 24px;">
+                                No bids placed yet. <a class="link" href="/Auctions">Browse live auctions</a> to get started.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var auctionId in auctionIds)
+                        {
+                            var bid = Model.BidList.First(b => b.AuctionId == auctionId);
+                            var auction = bid.Auction;
+                            if (auction == null) continue;
+
+                            var vehicleTitle = auction.Listing != null
+                                ? $"{auction.Listing.Year} {auction.Listing.Make?.Name ?? ""} {auction.Listing.Model?.Name ?? ""}".Trim()
+                                : $"Auction #{auctionId}";
+
+                            var currentHighest = currentHighestBids.GetValueOrDefault(auctionId);
+                            var myHighest = myHighestBids.GetValueOrDefault(auctionId);
+
+                            var isActive = auction.EndTime > now;
+                            var timeLeft = auction.EndTime - now;
+
+                            string timeLeftText;
+                            if (!isActive)
+                                timeLeftText = "—";
+                            else if (timeLeft.TotalDays >= 1)
+                                timeLeftText = $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h";
+                            else if (timeLeft.TotalHours >= 1)
+                                timeLeftText = $"{(int)timeLeft.TotalHours}h {timeLeft.Minutes}m";
+                            else
+                                timeLeftText = $"{timeLeft.Minutes}m";
+
+                            string statusText;
+                            string statusCss;
+                            if (!isActive)
+                            {
+                                statusText = "Ended";
+                                statusCss = "badge ended";
+                            }
+                            else if (myHighest >= currentHighest)
+                            {
+                                statusText = "Winning";
+                                statusCss = "badge winning";
+                            }
+                            else
+                            {
+                                statusText = "Outbid";
+                                statusCss = "badge outbid";
+                            }
+
+                            <tr>
+                                <td>@vehicleTitle</td>
+                                <td>@(currentHighest > 0 ? $"${currentHighest:N2}" : "—")</td>
+                                <td>$@myHighest.ToString("N2")</td>
+                                <td>@timeLeftText</td>
+                                <td><span class="@statusCss">@statusText</span></td>
+                                <td><a class="link" href="/Auctions/Detail/@auctionId">View</a></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+            </div>
+        </div>

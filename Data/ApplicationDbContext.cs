@@ -27,6 +27,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     public DbSet<Payment> Payments { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
     public DbSet<SellerRequest> SellerRequests { get; set; } = null!;
+    public DbSet<Favourite> Favourites { get; set; } = null!;
 
     // New grouping
     public DbSet<AuctionGroup> AuctionGroups { get; set; } = null!;
@@ -294,6 +295,16 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
             b.HasKey(x => new { x.AuctionGroupId, x.AuctionId });
             b.HasOne(x => x.AuctionGroup).WithMany(ag => ag.Auctions).HasForeignKey(x => x.AuctionGroupId).OnDelete(DeleteBehavior.Cascade);
             b.HasOne(x => x.Auction).WithMany().HasForeignKey(x => x.AuctionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Favourites (Watchlist)
+        modelBuilder.Entity<Favourite>(b =>
+        {
+            b.HasKey(x => x.FavouriteId);
+            b.Property(x => x.AddedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Auction).WithMany().HasForeignKey(x => x.AuctionId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.UserId, x.AuctionId }).IsUnique();
         });
     }
 }
