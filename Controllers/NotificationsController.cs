@@ -1,37 +1,48 @@
-using LastCallMotorAuctions.API.Data;
-using LastCallMotorAuctions.API.Models;
+using System.Security.Claims;
+using LastCallMotorAuctions.API.DTOs;
+using LastCallMotorAuctions.API.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LastCallMotorAuctions.API.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     [Authorize]
-    public class NotificationsController : Controller
+    public class NotificationsController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
-        private readonly UserManager<User> _userManager;
+        private readonly INotificationService _notificationService;
+        private readonly ILogger<NotificationsController> _logger;
 
-        public NotificationsController(ApplicationDbContext db, UserManager<User> userManager)
+        public NotificationsController(INotificationService notificationService, ILogger<NotificationsController> logger)
         {
-            _db = db;
-            _userManager = userManager;
+            _notificationService = notificationService;
+            _logger = logger;
         }
 
-        [HttpGet("/Notifications")]
-        public async Task<IActionResult> Index()
+        private int GetUserId()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return RedirectToAction("Login", "Auth");
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(id)) throw new UnauthorizedAccessException("User id not found.");
+            return int.Parse(id);
+        }
 
-            var notifications = await _db.Notifications
-                .AsNoTracking()
-                .Where(n => n.UserId == user.Id)
-                .OrderByDescending(n => n.CreatedAt)
-                .ToListAsync();
+        [HttpGet]
+        [ProducesResponseType(typeof(List<NotificationDto>), 200)]
+        public async Task<IActionResult> GetMy()
+        {
+            var userId = GetUserId();
+            var list = await _notificationService.GetForUserAsync(userId);
+            return Ok(list);
+        }
 
-            return View(notifications);
+        [HttpPost("{id:long}/read")]
+        public async Task<IActionResult> MarkRead(long id)
+        {
+            var userId = GetUserId();
+            var ok = await _notificationService.MarkReadAsync(id, userId);
+            if (!ok) return NotFound(new { message = "Notification not found or not yours." });
+            return Ok(new { message = "Marked as read." });
         }
     }
 }

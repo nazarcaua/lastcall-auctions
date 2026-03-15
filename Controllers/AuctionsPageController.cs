@@ -17,12 +17,15 @@ namespace LastCallMotorAuctions.API.Controllers
         private readonly IAuctionService _auctionService;
         private readonly ApplicationDbContext _db;
         private readonly UserManager<User> _userManager;
+        private readonly INotificationService _notificationService;
 
-        public AuctionsPageController(IAuctionService auctionService, ApplicationDbContext db, UserManager<User> userManager)
+
+        public AuctionsPageController(IAuctionService auctionService, ApplicationDbContext db, UserManager<User> userManager, INotificationService notificationService)
         {
             _auctionService = auctionService;
             _db = db;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
         [HttpGet("/Auctions")]
@@ -94,6 +97,16 @@ namespace LastCallMotorAuctions.API.Controllers
             singleAuction.StatusId = 3; // Ended
 
             await _db.SaveChangesAsync();
+
+            var singleSellerId = singleAuction.Listing.SellerId;
+            await _notificationService.CreateAsync(singleSellerId, "AuctionEnded", "Auction ended", "Your auction has ended.", auctionId: singleAuction.AuctionId);
+            var singleWinnerId = await _db.Bids
+                .Where(b => b.AuctionId == singleAuction.AuctionId)
+                .OrderByDescending(b => b.Amount)
+                .Select(b => b.BidderId)
+                .FirstOrDefaultAsync();
+            if (singleWinnerId != 0)
+                await _notificationService.CreateAsync(singleWinnerId, "AuctionWon", "You won the auction", "You had the highest bid when the auction ended.", auctionId: singleAuction.AuctionId);
 
             return RedirectToAction("Dashboard", "Seller");
         }

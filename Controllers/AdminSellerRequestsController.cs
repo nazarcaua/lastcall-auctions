@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Runtime.InteropServices;
 using LastCallMotorAuctions.API.Data;
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Models;
+using LastCallMotorAuctions.API.Services;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
-using System.Runtime.InteropServices;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LastCallMotorAuctions.API.Controllers
 {
@@ -17,11 +18,13 @@ namespace LastCallMotorAuctions.API.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<User> _userManager;
+        private readonly INotificationService _notificationService;
 
-        public AdminSellerRequestsController(ApplicationDbContext db, UserManager<User> userManager)
+        public AdminSellerRequestsController(ApplicationDbContext db, UserManager<User> userManager, INotificationService notificationService)
         {
             _db = db;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
         [HttpGet("pending")]
@@ -67,6 +70,9 @@ namespace LastCallMotorAuctions.API.Controllers
             }
 
             await _db.SaveChangesAsync();
+            if (req.User != null)
+                await _notificationService.CreateAsync(req.UserId, "SellerRequestApproved", "Seller request approved", "Your request to become a seller has been approved.");
+
             return Ok(new { message = "Seller request approved." });
         }
 
@@ -82,7 +88,10 @@ namespace LastCallMotorAuctions.API.Controllers
                 req.Notes = body?.Notes ?? req.Notes;
 
                 await _db.SaveChangesAsync();
-                return Ok(new { message = "Seller request rejected." });
+                var reqWithUser = await _db.SellerRequests.Include(r => r.User).FirstOrDefaultAsync(r => r.SellerRequestId == id);
+                if (reqWithUser?.User != null)
+                    await _notificationService.CreateAsync(reqWithUser.UserId, "SellerRequestRejected", "Seller request rejected", body?.Notes ?? "Your request to become a seller was not approved.");
+            return Ok(new { message = "Seller request rejected." });
             }
         }
     }

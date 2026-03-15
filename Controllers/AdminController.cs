@@ -1,5 +1,6 @@
 using LastCallMotorAuctions.API.Data;
 using LastCallMotorAuctions.API.Models;
+using LastCallMotorAuctions.API.Services;
 using LastCallMotorAuctions.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,17 +16,19 @@ namespace LastCallMotorAuctions.API.Controllers
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger<AdminController> _logger;
-
+        private readonly INotificationService _notificationService;
         public AdminController(
             ApplicationDbContext db,
             UserManager<User> userManager,
             SignInManager<User> signInManager,
-            ILogger<AdminController> logger)
+            ILogger<AdminController> logger,
+            INotificationService notificationService)
         {
             _db = db;
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -110,6 +113,8 @@ namespace LastCallMotorAuctions.API.Controllers
                 _logger.LogInformation("Admin granted Seller role to user {UserId} ({Email})", user.Id, user.Email);
                 TempData["Success"] = $"{user.FullName} has been upgraded to Seller.";
 
+                await _notificationService.CreateAsync(user.Id, "SellerRequestApproved", "Seller request approved", "Your request to become a seller has been approved.");
+
                 // If the admin granted the role to themselves, refresh their sign-in to update claims
                 var currentUser = await _userManager.GetUserAsync(User);
                 if (currentUser != null && currentUser.Id == user.Id)
@@ -148,6 +153,8 @@ namespace LastCallMotorAuctions.API.Controllers
             {
                 _logger.LogInformation("Admin revoked Seller role from user {UserId} ({Email})", user.Id, user.Email);
                 TempData["Success"] = $"Seller role removed from {user.FullName}.";
+
+                await _notificationService.CreateAsync(user.Id, "SellerRequestRejected", "Seller access revoked", "Your Seller access has been removed.");
 
                 // If the admin revoked the role from themselves, refresh their sign-in to update claims
                 var currentUser = await _userManager.GetUserAsync(User);
