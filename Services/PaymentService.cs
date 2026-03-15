@@ -8,15 +8,18 @@ namespace LastCallMotorAuctions.API.Services
         private readonly ApplicationDbContext _db;
         private readonly IConfiguration _configuration;
         private readonly ILogger<PaymentService> _logger;
+        private readonly INotificationService _notificationService;
 
         public PaymentService(
             ApplicationDbContext db,
             IConfiguration configuration,
-            ILogger<PaymentService> logger)
+            ILogger<PaymentService> logger,
+            INotificationService notificationService)
         {
             _db = db;
             _configuration = configuration;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         public Task<PaymentSetupResponseDto> CreateSetupAsync(int buyerId)
@@ -51,6 +54,8 @@ namespace LastCallMotorAuctions.API.Services
                 ClientSecret = "pi_test_secret",
                 Status = "requires_confirmation"
             };
+
+            await _notificationService.CreateAsync(buyerId, "PaymentPreauthSuccess", "Payment method confirmed", "You can place bids on this auction.", auctionId: request.AuctionId);
 
 
             return await Task.FromResult(result);

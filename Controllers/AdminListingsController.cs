@@ -1,5 +1,6 @@
 ﻿using LastCallMotorAuctions.API.Data;
 using LastCallMotorAuctions.API.DTOs;
+using LastCallMotorAuctions.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,12 @@ namespace LastCallMotorAuctions.API.Controllers
     public class AdminListingsController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        private readonly INotificationService _notificationService;
 
-        public AdminListingsController(ApplicationDbContext db)
+        public AdminListingsController(ApplicationDbContext db, INotificationService notificationService)
         {
             _db = db;
+            _notificationService = notificationService;
         }
 
         [HttpGet("pending")]
@@ -75,6 +78,8 @@ namespace LastCallMotorAuctions.API.Controllers
 
             listing.StatusId = activeId;
             await _db.SaveChangesAsync();
+            await _notificationService.CreateAsync(listing.SellerId, "ListingApproved", "Listing approved", $"Your listing \"{listing.Title}\" is now active.", listingId: listing.ListingId);
+
             return Ok(new { message = "Listing approved." });
         }
 
@@ -97,6 +102,8 @@ namespace LastCallMotorAuctions.API.Controllers
 
             listing.StatusId = archivedId;
             await _db.SaveChangesAsync();
+            await _notificationService.CreateAsync(listing.SellerId, "ListingRejected", "Listing rejected", $"Your listing \"{listing.Title}\" was not approved.", listingId: listing.ListingId);
+
             return Ok(new { message = "Listing rejected." });
         }
 

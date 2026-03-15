@@ -140,6 +140,11 @@ builder.Services.AddHealthChecks()
         tags: new[] { "db", "sql", "sqlserver" }
     );
 
+// ======================
+// Notification Service
+// ======================
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 var app = builder.Build();
 
 // =======================
