@@ -227,6 +227,66 @@
 }
 
 /* ============================
+   Vehicle Specifications Card
+   ============================ */
+
+.vehicle-specs-card,
+.vehicle-location-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: 24px;
+}
+
+.vehicle-specs-card h3,
+.vehicle-location-card h3 {
+    font-size: 1.1rem;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.spec-label {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.spec-value {
+    font-size: 0.95rem;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.location-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.location-icon {
+    font-size: 1.2rem;
+}
+
+.location-text {
+    font-size: 0.95rem;
+    color: var(--color-primary);
+}
+
+/* ============================
    Bid History Card
    ============================ */
 

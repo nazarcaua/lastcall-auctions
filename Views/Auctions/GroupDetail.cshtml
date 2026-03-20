@@ -4,94 +4,455 @@
     ViewData["Title"] = Model.Title;
     var now = DateTime.UtcNow;
     var watchlistIds = (HashSet<int>)(ViewBag.WatchlistIds ?? new HashSet<int>());
-    var isBuyer = (bool)(ViewBag.IsBuyer ?? false);
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
 }
 
-<section class="page">
+<link rel="stylesheet" href="~/css/auction-detail.css" asp-append-version="true" />
+
+<section class="page auction-detail-page">
     <a class="back-link" href="/Auctions">&larr; Back to auctions</a>
 
-    <h1>@Model.Title</h1>
-    <p class="muted">@Model.Auctions.Count vehicle@(Model.Auctions.Count != 1 ? "s" : "") in this auction.</p>
+    <div class="auction-header-section">
+        <h1>@Model.Title</h1>
+        <p class="vehicle-count">@Model.Auctions.Count vehicle@(Model.Auctions.Count != 1 ? "s" : "") in this auction</p>
 
-    <div class="vehicle-list">
-        @foreach (var a in Model.Auctions)
+        @if (isAuthenticated)
         {
-            var timeLeft = a.EndTime - now;
-            var timeLeftText = timeLeft.TotalSeconds <= 0
-                ? "Ended"
-                : $"{(int)timeLeft.TotalDays}d {timeLeft.Hours}h {timeLeft.Minutes}m";
-
-            <div class="vehicle-card">
-                @if (a.PhotoUrls != null && a.PhotoUrls.Count > 0)
-                {
-                    <div class="vehicle-photos @(a.PhotoUrls.Count == 1 ? "vehicle-photos-single" : "")">
-                        @foreach (var url in a.PhotoUrls)
-                        {
-                            <img src="@url" alt="@a.Year @a.MakeName @a.ModelName" />
-                        }
-                    </div>
-                }
-
-                <div class="vehicle-card-content">
-                    <div class="vehicle-header">
-                        <h2>@a.Year @a.MakeName @a.ModelName</h2>
-                        <span class="badge @(a.EndTime > now ? "active" : "ended")">
-                            @(a.StatusName ?? (a.EndTime > now ? "Active" : "Ended"))
-                        </span>
-                    </div>
-
-                    @if (!string.IsNullOrWhiteSpace(a.Title))
-                    {
-                        <p class="vehicle-title">@a.Title</p>
-                    }
-
-                    <div class="vehicle-details">
-                        <div class="detail-row">
-                            <span class="detail-label">Start Price</span>
-                            <span class="detail-value">@string.Format("{0:C}", a.StartPrice)</span>
-                        </div>
-
-                        @if (a.ReservePrice.HasValue)
-                        {
-                            <div class="detail-row">
-                                <span class="detail-label">Reserve</span>
-                                <span class="detail-value">@string.Format("{0:C}", a.ReservePrice.Value)</span>
-                            </div>
-                        }
-
-                        <div class="detail-row">
-                            <span class="detail-label">Current Bid</span>
-                            <span class="detail-value">@(a.CurrentBid.HasValue ? string.Format("{0:C}", a.CurrentBid.Value) : "No bids yet")</span>
-                        </div>
-
-                        <div class="detail-row">
-                            <span class="detail-label">Ends</span>
-                            <span class="detail-value">@a.EndTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</span>
-                        </div>
-
-                        <div class="detail-row">
-                            <span class="detail-label">Time Left</span>
-                            <span class="detail-value">@timeLeftText</span>
-                        </div>
-                    </div>
-
-                    <div class="vehicle-card-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <a href="/Auctions/Auction/@a.AuctionId" class="btn accent">
-                            @(a.EndTime > now ? "Place Bid" : "View Results")
-                        </a>
-                        @if (isBuyer)
-                        {
-                            var isWatched = watchlistIds.Contains(a.AuctionId);
-                            <button class="btn outline watchlist-text-btn @(isWatched ? "active" : "")"
-                                    data-auction-id="@a.AuctionId"
-                                    title="@(isWatched ? "Remove from watchlist" : "Add to watchlist")"
-                                    onclick="toggleWatchlist(this)">
-                                @(isWatched ? "♥ Watching" : "♡ Watch")
-                            </button>
-                        }
-                    </div>
-                </div>
+            <div class="favorites-filter">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="showFavoritesOnly" onchange="toggleFavoritesFilter(this.checked)" />
+                    <span class="checkbox-custom"></span>
+                    Show favorites only
+                </label>
+                <span class="favorites-count">(<span id="favoritesCount">@watchlistIds.Count</span> favorited)</span>
             </div>
         }
     </div>
+
+    <div class="vehicles-scroll-list" id="vehiclesList">
+        @{ var vehicleIndex = 0; }
+        @foreach (var a in Model.Auctions)
+        {
+            var timeLeft = a.EndTime - now;
+            var hasEnded = timeLeft.TotalSeconds <= 0;
+            var isEndingSoon = timeLeft.TotalHours < 24 && !hasEnded;
+            var isWatched = watchlistIds.Contains(a.AuctionId);
+            var photoCount = a.PhotoUrls?.Count ?? 0;
+            var currentBid = a.CurrentBid ?? a.StartPrice;
+            var minBid = currentBid + 100;
+
+            <article class="vehicle-detail-card" data-auction-id="@a.AuctionId" data-is-favorite="@isWatched.ToString().ToLower()">
+                <!-- Photo Gallery -->
+                <div class="vehicle-gallery" data-gallery-id="@vehicleIndex">
+                    @if (photoCount > 0)
+                    {
+                        <div class="gallery-container">
+                            <div class="gallery-track" data-current="0">
+                                @foreach (var url in a.PhotoUrls!)
+                                {
+                                    <div class="gallery-slide">
+                                        <img src="@url" alt="@a.Year @a.MakeName @a.ModelName" />
+                                    </div>
+                                }
+                            </div>
+
+                            @if (photoCount > 1)
+                            {
+                                <button class="gallery-nav-btn prev" onclick="navigateGallery(@vehicleIndex, -1)" aria-label="Previous photo">
+                                    ‹
+                                </button>
+                                <button class="gallery-nav-btn next" onclick="navigateGallery(@vehicleIndex, 1)" aria-label="Next photo">
+                                    ›
+                                </button>
+                                <div class="gallery-counter">
+                                    <span class="current-photo">1</span> / @photoCount
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-photos">No photos available</div>
+                    }
+
+                    <div class="vehicle-status-badge @(hasEnded ? "ended" : isEndingSoon ? "ending-soon" : "active")">
+                        @(hasEnded ? "Ended" : isEndingSoon ? "Ending Soon" : "Active")
+                    </div>
+                </div>
+
+                <!-- Vehicle Info -->
+                <div class="vehicle-info">
+                    <!-- Header -->
+                    <div class="vehicle-header">
+                        <h2>@a.Year @a.MakeName @a.ModelName</h2>
+                        @if (!string.IsNullOrWhiteSpace(a.Title))
+                        {
+                            <p class="vehicle-subtitle">@a.Title</p>
+                        }
+                    </div>
+
+                    <!-- Specs Grid -->
+                    <div class="vehicle-specs">
+                        <div class="spec">
+                            <span class="spec-label">Mileage</span>
+                            <span class="spec-value">@(a.Mileage.HasValue ? $"{a.Mileage.Value:N0} km" : "N/A")</span>
+                        </div>
+                        <div class="spec">
+                            <span class="spec-label">Start Price</span>
+                            <span class="spec-value">$@a.StartPrice.ToString("N0")</span>
+                        </div>
+                        <div class="spec">
+                            <span class="spec-label">Reserve</span>
+                            <span class="spec-value @(a.ReservePrice.HasValue ? "" : "unreserved")">
+                                @(a.ReservePrice.HasValue ? $"${a.ReservePrice.Value:N0}" : "Unreserved")
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    @if (!string.IsNullOrWhiteSpace(a.Description))
+                    {
+                        <div class="vehicle-description">
+                            <p>@a.Description</p>
+                        </div>
+                    }
+
+                    <!-- Bidding Panel -->
+                    <div class="bidding-panel">
+                        <div class="bid-info">
+                            <div class="bid-row">
+                                <span class="bid-label">Current Bid</span>
+                                <span class="bid-value current" data-current-bid="@currentBid">
+                                    $<span class="current-bid-amount">@currentBid.ToString("N0")</span>
+                                </span>
+                                @if (!a.CurrentBid.HasValue)
+                                {
+                                    <span class="bid-note">(Starting price)</span>
+                                }
+                            </div>
+                            <div class="bid-row">
+                                <span class="bid-label">Time Left</span>
+                                <span class="bid-value time @(isEndingSoon ? "urgent" : "")">
+                                    @if (hasEnded)
+                                    {
+                                        <text>Auction Ended</text>
+                                    }
+                                    else
+                                    {
+                                        <text>@((int)timeLeft.TotalDays)d @timeLeft.Hours.ToString("00")h @timeLeft.Minutes.ToString("00")m</text>
+                                    }
+                                </span>
+                            </div>
+                            <div class="bid-row">
+                                <span class="bid-label">Ends</span>
+                                <span class="bid-value">@a.EndTime.ToLocalTime().ToString("MMM d, yyyy 'at' h:mm tt")</span>
+                            </div>
+                        </div>
+
+                        @if (!hasEnded)
+                        {
+                            <div class="bid-actions">
+                                @if (isAuthenticated)
+                                {
+                                    <div class="inline-bid-form" data-auction-id="@a.AuctionId" data-min-bid="@minBid">
+                                        <div class="bid-input-wrapper">
+                                            <span class="currency-symbol">$</span>
+                                            <input type="number" 
+                                                   class="bid-amount-input" 
+                                                   placeholder="@minBid.ToString("N0")" 
+                                                   min="@minBid" 
+                                                   step="100" />
+                                        </div>
+                                        <button class="btn accent place-bid-btn" onclick="placeBidInline(this)">
+                                            Place Bid
+                                        </button>
+                                    </div>
+                                    <button class="btn outline watch-btn @(isWatched ? "active" : "")"
+                                            data-auction-id="@a.AuctionId"
+                                            type="button">
+                                        @(isWatched ? "♥" : "♡")
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a href="/Auth/Login" class="btn accent">Login to Bid</a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="auction-ended-notice">
+                                <span>Auction has ended</span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Bid feedback -->
+                    <div class="bid-feedback hidden"></div>
+                </div>
+            </article>
+            vehicleIndex++;
+        }
+    </div>
 </section>
+
+<script>
+    function navigateGallery(galleryId, direction) {
+        const gallery = document.querySelector(`[data-gallery-id="${galleryId}"]`);
+        const track = gallery.querySelector('.gallery-track');
+        const slides = track.querySelectorAll('.gallery-slide');
+        const counter = gallery.querySelector('.current-photo');
+        const totalSlides = slides.length;
+
+        let current = parseInt(track.dataset.current) || 0;
+        current += direction;
+
+        if (current < 0) current = totalSlides - 1;
+        if (current >= totalSlides) current = 0;
+
+        track.dataset.current = current;
+        track.style.transform = `translateX(-${current * 100}%)`;
+
+        if (counter) {
+            counter.textContent = current + 1;
+        }
+    }
+
+    async function placeBidInline(button) {
+        const form = button.closest('.inline-bid-form');
+        const card = button.closest('.vehicle-detail-card');
+        const auctionId = form.dataset.auctionId;
+        const input = form.querySelector('.bid-amount-input');
+        const minBid = parseFloat(form.dataset.minBid);
+        const amount = parseFloat(input.value);
+        const feedback = card.querySelector('.bid-feedback');
+
+        // Validation
+        if (!amount || isNaN(amount)) {
+            showFeedback(feedback, `Please enter a bid amount (minimum $${minBid.toLocaleString()})`, true);
+            return;
+        }
+
+        if (amount < minBid) {
+            showFeedback(feedback, `Minimum bid is $${minBid.toLocaleString()}`, true);
+            return;
+        }
+
+        // Disable button during request
+        button.disabled = true;
+        button.textContent = 'Placing...';
+
+        try {
+            const response = await fetch(`/api/auctions/${auctionId}/bids`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    auctionId: parseInt(auctionId),
+                    amount: amount
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to place bid');
+            }
+
+            const result = await response.json();
+
+            // Update the current bid display
+            const currentBidEl = card.querySelector('.current-bid-amount');
+            const bidValueEl = card.querySelector('.bid-value.current');
+            currentBidEl.textContent = amount.toLocaleString();
+            bidValueEl.dataset.currentBid = amount;
+
+            // Update minimum bid
+            const newMinBid = amount + 100;
+            form.dataset.minBid = newMinBid;
+            input.min = newMinBid;
+            input.placeholder = newMinBid.toLocaleString();
+            input.value = '';
+
+            // Remove "starting price" note if exists
+            const bidNote = card.querySelector('.bid-note');
+            if (bidNote) bidNote.remove();
+
+            // Show success
+            showFeedback(feedback, `Bid of $${amount.toLocaleString()} placed successfully!`, false);
+
+        } catch (error) {
+            console.error('Error placing bid:', error);
+            showFeedback(feedback, error.message || 'Failed to place bid. Please try again.', true);
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Place Bid';
+        }
+    }
+
+    function showFeedback(element, message, isError) {
+        element.textContent = message;
+        element.className = 'bid-feedback ' + (isError ? 'error' : 'success');
+        element.classList.remove('hidden');
+
+        setTimeout(() => {
+            element.classList.add('hidden');
+        }, 4000);
+    }
+
+    // Keyboard navigation for galleries
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const direction = e.key === 'ArrowLeft' ? -1 : 1;
+            const galleries = document.querySelectorAll('.vehicle-gallery');
+            galleries.forEach((gallery, index) => {
+                const rect = gallery.getBoundingClientRect();
+                if (rect.top < window.innerHeight / 2 && rect.bottom > window.innerHeight / 2) {
+                    navigateGallery(index, direction);
+                }
+            });
+        }
+    });
+
+    // Enter key to place bid
+    document.querySelectorAll('.bid-amount-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const btn = this.closest('.inline-bid-form').querySelector('.place-bid-btn');
+                btn.click();
+            }
+        });
+    });
+
+    // Toggle favorites filter
+    function toggleFavoritesFilter(showOnlyFavorites) {
+        const cards = document.querySelectorAll('.vehicle-detail-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const isFavorite = card.dataset.isFavorite === 'true';
+            if (showOnlyFavorites && !isFavorite) {
+                card.style.display = 'none';
+            } else {
+                card.style.display = '';
+                visibleCount++;
+            }
+        });
+
+        // Show message if no favorites
+        const list = document.getElementById('vehiclesList');
+        let noFavMsg = document.getElementById('noFavoritesMessage');
+
+        if (showOnlyFavorites && visibleCount === 0) {
+            if (!noFavMsg) {
+                noFavMsg = document.createElement('div');
+                noFavMsg.id = 'noFavoritesMessage';
+                noFavMsg.className = 'no-favorites-message';
+                noFavMsg.innerHTML = '<p>You have no favorited vehicles in this auction.</p><p>Click the ♡ button on any vehicle to add it to your favorites.</p>';
+                list.appendChild(noFavMsg);
+            }
+            noFavMsg.style.display = '';
+        } else if (noFavMsg) {
+            noFavMsg.style.display = 'none';
+        }
+    }
+
+    // Toggle watchlist/favorite
+    async function toggleWatchlist(button) {
+        const auctionId = button.dataset.auctionId;
+        const card = button.closest('.vehicle-detail-card');
+
+        console.log('=== FAVORITE BUTTON CLICKED ===');
+        console.log('Auction ID:', auctionId);
+
+        if (!auctionId) {
+            alert('Error: No auction ID found');
+            return;
+        }
+
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = '...';
+
+        try {
+            const url = `/api/auctions/${auctionId}/favorite`;
+            console.log('Fetching URL:', url);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+
+            // Get raw text first to see what we received
+            const rawText = await response.text();
+            console.log('Raw response:', rawText);
+
+            if (response.status === 401) {
+                alert('You must be logged in to favorite. Redirecting to login...');
+                window.location.href = '/Auth/Login';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${rawText}`);
+            }
+
+            // Parse the JSON
+            const result = JSON.parse(rawText);
+            console.log('Parsed result:', result);
+            const isFavorited = result.isFavourited;
+
+            // Update button appearance
+            button.textContent = isFavorited ? '♥' : '♡';
+            button.classList.toggle('active', isFavorited);
+
+            // Update card data attribute
+            if (card) {
+                card.dataset.isFavorite = isFavorited.toString();
+            }
+
+            // Update favorites count
+            const countEl = document.getElementById('favoritesCount');
+            if (countEl) {
+                const currentCount = parseInt(countEl.textContent) || 0;
+                countEl.textContent = isFavorited ? currentCount + 1 : Math.max(0, currentCount - 1);
+            }
+
+            // If filter is active, check if we should hide/show the card
+            const checkbox = document.getElementById('showFavoritesOnly');
+            if (checkbox && checkbox.checked) {
+                toggleFavoritesFilter(true);
+            }
+
+            console.log('=== SUCCESS ===');
+
+        } catch (error) {
+            console.error('=== ERROR ===');
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
+            button.textContent = originalText;
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    // Use event delegation for watch buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded - attaching watch button handlers');
+
+        document.querySelectorAll('.watch-btn').forEach(function(btn) {
+            console.log('Found watch button for auction:', btn.dataset.auctionId);
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Watch button clicked via event listener');
+                toggleWatchlist(this);
+            });
+        });
+    });
+</script>
+
+@Html.AntiForgeryToken()
