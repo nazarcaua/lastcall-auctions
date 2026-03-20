@@ -188,11 +188,11 @@ namespace LastCallMotorAuctions.API.Controllers
 
         private async Task SetWatchlistViewBag()
         {
-            var isBuyer = User.IsInRole("Buyer");
-            ViewBag.IsBuyer = isBuyer;
+            var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+            ViewBag.IsAuthenticated = isAuthenticated;
             ViewBag.WatchlistIds = new HashSet<int>();
 
-            if (!isBuyer) return;
+            if (!isAuthenticated) return;
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return;

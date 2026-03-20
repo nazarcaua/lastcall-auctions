@@ -47,6 +47,9 @@ class BiddingPage {
             vehicleModel: document.getElementById('vehicleModel'),
             vehicleMileage: document.getElementById('vehicleMileage'),
             vehicleDescription: document.getElementById('vehicleDescription'),
+            vehicleVin: document.getElementById('vehicleVin'),
+            vehicleCondition: document.getElementById('vehicleCondition'),
+            vehicleLocation: document.getElementById('vehicleLocation'),
             bidHistoryContent: document.getElementById('bidHistoryContent'),
             auctionStatusBadge: document.getElementById('auctionStatusBadge'),
             countdownDays: document.getElementById('countdownDays'),
@@ -153,7 +156,17 @@ class BiddingPage {
         this.elements.vehicleMake.textContent = a.makeName;
         this.elements.vehicleModel.textContent = a.modelName;
         this.elements.vehicleMileage.textContent = a.mileage ? `${a.mileage.toLocaleString()} km` : 'N/A';
-        this.elements.vehicleDescription.textContent = a.description || '';
+        this.elements.vehicleDescription.textContent = a.description || 'No description available.';
+
+        // Vehicle specifications
+        this.elements.vehicleVin.textContent = a.vin || 'Not provided';
+        this.elements.vehicleCondition.textContent = this.getConditionLabel(a.conditionGrade);
+
+        // Vehicle location
+        const locationParts = [a.city, a.region, a.country].filter(Boolean);
+        this.elements.vehicleLocation.textContent = locationParts.length > 0 
+            ? locationParts.join(', ') + (a.postalCode ? ` (${a.postalCode})` : '')
+            : 'Location not specified';
 
         // Photos
         this.renderPhotos();
@@ -590,6 +603,17 @@ class BiddingPage {
             .join('')
             .toUpperCase()
             .slice(0, 2);
+    }
+
+    getConditionLabel(grade) {
+        const conditions = {
+            1: 'Poor',
+            2: 'Fair',
+            3: 'Good',
+            4: 'Very Good',
+            5: 'Excellent'
+        };
+        return conditions[grade] || `Grade ${grade}`;
     }
 }
 

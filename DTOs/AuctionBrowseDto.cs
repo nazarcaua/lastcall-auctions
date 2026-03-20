@@ -26,5 +26,17 @@ namespace LastCallMotorAuctions.API.DTOs
 
         // Listing photo URLs
         public List<string> PhotoUrls { get; set; } = new();
+
+        // Vehicle details
+        public string? Description { get; set; }
+        public string? Vin { get; set; }
+        public int? Mileage { get; set; }
+        public byte ConditionGrade { get; set; }
+
+        // Location details
+        public string? City { get; set; }
+        public string? Region { get; set; }
+        public string? Country { get; set; }
+        public string? PostalCode { get; set; }
     }
 }

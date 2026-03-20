@@ -90,6 +90,7 @@ namespace LastCallMotorAuctions.API.Services
                 .AsNoTracking()
                 .Include(a => a.Listing).ThenInclude(l => l!.Make)
                 .Include(a => a.Listing).ThenInclude(l => l!.Model)
+                .Include(a => a.Listing).ThenInclude(l => l!.Location)
                 .Include(a => a.Status)
                 .FirstOrDefaultAsync(a => a.AuctionId == auctionId);
 
@@ -111,9 +112,17 @@ namespace LastCallMotorAuctions.API.Services
                 AuctionId = auction.AuctionId,
                 ListingId = auction.ListingId,
                 Title = auction.Listing!.Title,
+                Description = auction.Listing.Description,
                 Year = auction.Listing.Year,
                 MakeName = auction.Listing.Make?.Name ?? "",
                 ModelName = auction.Listing.Model?.Name ?? "",
+                Vin = auction.Listing.Vin,
+                Mileage = auction.Listing.Mileage,
+                ConditionGrade = auction.Listing.ConditionGrade,
+                City = auction.Listing.Location?.City,
+                Region = auction.Listing.Location?.Region,
+                Country = auction.Listing.Location?.Country,
+                PostalCode = auction.Listing.Location?.PostalCode,
                 StartPrice = auction.StartPrice,
                 ReservePrice = auction.ReservePrice,
                 StartTime = auction.StartTime,
@@ -136,6 +145,7 @@ namespace LastCallMotorAuctions.API.Services
                 .AsNoTracking()
                 .Include(a => a.Listing).ThenInclude(l => l!.Make)
                 .Include(a => a.Listing).ThenInclude(l => l!.Model)
+                .Include(a => a.Listing).ThenInclude(l => l!.Location)
                 .Include(a => a.Status)
                 .Where(a => a.EndTime > now && a.StartTime <= now) // Active based on time
                 .OrderBy(a => a.EndTime)
@@ -162,9 +172,17 @@ namespace LastCallMotorAuctions.API.Services
                 AuctionId = a.AuctionId,
                 ListingId = a.ListingId,
                 Title = a.Listing!.Title,
+                Description = a.Listing.Description,
                 Year = a.Listing.Year,
                 MakeName = a.Listing.Make?.Name ?? "",
                 ModelName = a.Listing.Model?.Name ?? "",
+                Vin = a.Listing.Vin,
+                Mileage = a.Listing.Mileage,
+                ConditionGrade = a.Listing.ConditionGrade,
+                City = a.Listing.Location?.City,
+                Region = a.Listing.Location?.Region,
+                Country = a.Listing.Location?.Country,
+                PostalCode = a.Listing.Location?.PostalCode,
                 StartPrice = a.StartPrice,
                 ReservePrice = a.ReservePrice,
                 StartTime = a.StartTime,
@@ -209,6 +227,10 @@ namespace LastCallMotorAuctions.API.Services
                             .ThenInclude(l => l!.Model)
                 .Include(g => g.Auctions)
                     .ThenInclude(aga => aga.Auction)
+                        .ThenInclude(a => a!.Listing)
+                            .ThenInclude(l => l!.Location)
+                .Include(g => g.Auctions)
+                    .ThenInclude(aga => aga.Auction)
                         .ThenInclude(a => a!.Status)
                 .FirstOrDefaultAsync(g => g.AuctionGroupId == groupId);
 
@@ -233,9 +255,17 @@ namespace LastCallMotorAuctions.API.Services
                     AuctionId = aga.Auction!.AuctionId,
                     ListingId = aga.Auction.ListingId,
                     Title = aga.Auction.Listing!.Title,
+                    Description = aga.Auction.Listing.Description,
                     Year = aga.Auction.Listing.Year,
                     MakeName = aga.Auction.Listing.Make?.Name ?? "",
                     ModelName = aga.Auction.Listing.Model?.Name ?? "",
+                    Vin = aga.Auction.Listing.Vin,
+                    Mileage = aga.Auction.Listing.Mileage,
+                    ConditionGrade = aga.Auction.Listing.ConditionGrade,
+                    City = aga.Auction.Listing.Location?.City,
+                    Region = aga.Auction.Listing.Location?.Region,
+                    Country = aga.Auction.Listing.Location?.Country,
+                    PostalCode = aga.Auction.Listing.Location?.PostalCode,
                     StartPrice = aga.Auction.StartPrice,
                     ReservePrice = aga.Auction.ReservePrice,
                     StartTime = aga.Auction.StartTime,

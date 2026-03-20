@@ -6,7 +6,9 @@
     var isBuyer = (bool)(ViewBag.IsBuyer ?? false);
 }
 
-<section class="page">
+<link rel="stylesheet" href="~/css/auctions-browse.css" asp-append-version="true" />
+
+<section class="page auctions-browse-page">
     <h1>Browse Auctions</h1>
 
     @if (Model == null || !Model.Any())
@@ -15,42 +17,64 @@
     }
     else
     {
-        var grouped = Model.GroupBy(a => a.AuctionGroupId ?? a.AuctionId).ToList();
-        <div class="grid">
+        // Group auctions by their auction group (or treat individual auctions as their own group)
+        var grouped = Model.GroupBy(a => a.AuctionGroupId ?? -a.AuctionId).ToList();
+
+        <div class="auctions-list">
             @foreach (var group in grouped)
             {
                 var first = group.First();
-                var title = first.AuctionGroupTitle ?? first.Title;
-                var ends = group.Min(a => a.EndTime);
+                var auctionTitle = first.AuctionGroupTitle ?? first.Title;
+                var vehicleCount = group.Count();
+                var startDate = group.Min(a => a.StartTime);
+                var endDate = group.Max(a => a.EndTime);
                 var firstPhoto = group.SelectMany(a => a.PhotoUrls).FirstOrDefault();
-                var firstAuctionId = first.AuctionId;
                 var isWatchlisted = group.Any(a => watchlistIds.Contains(a.AuctionId));
 
-                <article class="card">
-                    <div class="card-photo-wrap">
+                var timeRemaining = endDate - DateTime.UtcNow;
+                var hasStarted = startDate <= DateTime.UtcNow;
+                var hasEnded = timeRemaining.TotalSeconds <= 0;
+                var isEndingSoon = timeRemaining.TotalHours < 24 && timeRemaining.TotalSeconds > 0;
+
+                <article class="auction-event-card">
+                    <!-- Photo Section -->
+                    <div class="event-photo-section">
                         @if (firstPhoto != null)
                         {
-                            <img class="card-photo" src="@firstPhoto" alt="@title" />
+                            <img class="event-photo" src="@firstPhoto" alt="@auctionTitle" />
                         }
                         else
                         {
-                            <div class="card-photo-placeholder">No photos</div>
+                            <div class="event-photo-placeholder">No preview</div>
                         }
-                        @if (isBuyer)
-                        {
-                            <button class="watchlist-icon-btn @(isWatchlisted ? "active" : "")"
-                                    data-auction-id="@firstAuctionId"
-                                    title="@(isWatchlisted ? "Remove from watchlist" : "Add to watchlist")"
-                                    onclick="toggleWatchlist(this)">
-                                @(isWatchlisted ? "♥" : "♡")
-                            </button>
-                        }
+                        <div class="event-status-badge @(hasEnded ? "ended" : isEndingSoon ? "ending-soon" : hasStarted ? "active" : "upcoming")">
+                            @(hasEnded ? "Ended" : isEndingSoon ? "Ending Soon" : hasStarted ? "Live" : "Upcoming")
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <h3>@title</h3>
-                        <p>@(group.Count() == 1 ? $"{first.Year} {first.MakeName} {first.ModelName}" : $"{group.Count()} vehicles")</p>
-                        <p>@(ends > DateTime.UtcNow ? $"Ends {ends.ToLocalTime():g}" : "Ended")</p>
-                        <a class="btn small" href="/Auctions/Detail/@(group.Key)">View auction</a>
+
+                    <!-- Info Section -->
+                    <div class="event-info-section">
+                        <h2 class="event-title">@auctionTitle</h2>
+
+                        <div class="event-vehicle-count">
+                            <span class="vehicle-icon">🚗</span>
+                            <span>@vehicleCount @(vehicleCount == 1 ? "Vehicle" : "Vehicles")</span>
+                        </div>
+
+                        <div class="event-dates">
+                            <div class="date-row">
+                                <span class="date-label">Starts</span>
+                                <span class="date-value">@startDate.ToLocalTime().ToString("MMM d, yyyy 'at' h:mm tt")</span>
+                            </div>
+                            <div class="date-row">
+                                <span class="date-label">Ends</span>
+                                <span class="date-value">@endDate.ToLocalTime().ToString("MMM d, yyyy 'at' h:mm tt")</span>
+                            </div>
+                        </div>
+
+                        <a class="btn event-view-btn" href="/Auctions/Detail/@(first.AuctionGroupId ?? first.AuctionId)">
+                            View Auction
+                        </a>
                     </div>
                 </article>
             }
