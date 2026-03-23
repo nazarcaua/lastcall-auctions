@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Services;
 
 namespace LastCallMotorAuctions.API.Controllers
@@ -27,7 +28,31 @@ namespace LastCallMotorAuctions.API.Controllers
         }
 
         /// <summary>
-        /// Get all makes available for a specific year.
+        /// Get makes, optionally filtered by year (query param).
+        /// Used by the vehicle value estimator frontend.
+        /// </summary>
+        [HttpGet("makes")]
+        public async Task<IActionResult> GetMakes([FromQuery] short? year)
+        {
+            var makes = year.HasValue
+                ? await _vehicleService.GetMakesByYearAsync(year.Value)
+                : await _vehicleService.GetAllMakesAsync();
+            return Ok(makes);
+        }
+
+        /// <summary>
+        /// Get models filtered by year and make (query params).
+        /// Used by the vehicle value estimator frontend.
+        /// </summary>
+        [HttpGet("models")]
+        public async Task<IActionResult> GetModels([FromQuery] short year, [FromQuery] int makeId)
+        {
+            var models = await _vehicleService.GetModelsByYearAndMakeAsync(year, makeId);
+            return Ok(models);
+        }
+
+        /// <summary>
+        /// Get all makes available for a specific year (path param route).
         /// </summary>
         [HttpGet("years/{year:int}/makes")]
         public async Task<IActionResult> GetMakesByYear(short year)
@@ -37,7 +62,7 @@ namespace LastCallMotorAuctions.API.Controllers
         }
 
         /// <summary>
-        /// Get all models available for a specific year and make combination.
+        /// Get all models available for a specific year and make combination (path param route).
         /// </summary>
         [HttpGet("years/{year:int}/makes/{makeId:int}/models")]
         public async Task<IActionResult> GetModelsByYearAndMake(short year, int makeId)
@@ -47,17 +72,7 @@ namespace LastCallMotorAuctions.API.Controllers
         }
 
         /// <summary>
-        /// Get all makes (useful for admin or general browsing).
-        /// </summary>
-        [HttpGet("makes")]
-        public async Task<IActionResult> GetAllMakes()
-        {
-            var makes = await _vehicleService.GetAllMakesAsync();
-            return Ok(makes);
-        }
-
-        /// <summary>
-        /// Get all models for a specific make (useful for admin or general browsing).
+        /// Get all models for a specific make.
         /// </summary>
         [HttpGet("makes/{makeId:int}/models")]
         public async Task<IActionResult> GetModelsByMake(int makeId)
@@ -65,5 +80,18 @@ namespace LastCallMotorAuctions.API.Controllers
             var models = await _vehicleService.GetModelsByMakeAsync(makeId);
             return Ok(models);
         }
+
+        /// <summary>
+        /// Calculate a vehicle value estimate with repair cost breakdown.
+        /// </summary>
+        [HttpPost("value-estimate")]
+        public async Task<IActionResult> GetValueEstimate([FromBody] VehicleEstimateRequestDto request)
+        {
+            var result = await _vehicleService.GetValueEstimateAsync(request);
+            if (result == null)
+                return NotFound("Vehicle make or model not found.");
+            return Ok(result);
+        }
     }
 }
+

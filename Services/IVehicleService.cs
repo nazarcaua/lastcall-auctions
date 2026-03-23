@@ -17,5 +17,8 @@ namespace LastCallMotorAuctions.API.Services
         // Admin methods for managing vehicle data
         Task<List<VehicleMakeDto>> GetAllMakesAsync();
         Task<List<VehicleModelDto>> GetModelsByMakeAsync(int makeId);
+
+        // Vehicle value estimator
+        Task<VehicleEstimateResponseDto?> GetValueEstimateAsync(VehicleEstimateRequestDto request);
     }
 }
