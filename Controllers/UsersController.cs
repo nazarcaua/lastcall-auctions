@@ -95,4 +95,24 @@ public class UsersController : Controller
 
         return Ok(new { message = "Seller request submitted." });
     }
+
+    [HttpGet("me/roles")]
+    [Authorize]
+    public IActionResult GetMyRoles()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var roles = User.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value)
+            .ToList();
+
+        return Ok(new
+        {
+            UserId = userId,
+            Email = email,
+            Roles = roles,
+            AllClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList()
+        });
+    }
 }

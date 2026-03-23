@@ -17,18 +17,40 @@ namespace LastCallMotorAuctions.API.Controllers
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger<AdminController> _logger;
         private readonly INotificationService _notificationService;
+        private readonly IWebHostEnvironment _env;
+
+        private static readonly HashSet<string> AllowedPhotoExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".webp"
+        };
+
         public AdminController(
             ApplicationDbContext db,
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             ILogger<AdminController> logger,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IWebHostEnvironment env)
         {
             _db = db;
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
             _notificationService = notificationService;
+            _env = env;
+        }
+
+        private List<string> GetPhotoUrlsForListing(int listingId)
+        {
+            var uploadDir = Path.Combine(_env.WebRootPath ?? "", "uploads", "listings", listingId.ToString());
+            if (!Directory.Exists(uploadDir))
+                return new List<string>();
+
+            return Directory.GetFiles(uploadDir)
+                .Where(f => AllowedPhotoExtensions.Contains(Path.GetExtension(f)))
+                .OrderBy(f => f)
+                .Select(f => $"/uploads/listings/{listingId}/{Path.GetFileName(f)}")
+                .ToList();
         }
 
         [HttpGet]
@@ -61,9 +83,54 @@ namespace LastCallMotorAuctions.API.Controllers
                     });
                 }
 
+                // Load ALL auctions for admin management
+                var auctions = await _db.Auctions
+                    .AsNoTracking()
+                    .Include(a => a.Listing).ThenInclude(l => l!.Seller)
+                    .Include(a => a.Status)
+                    .OrderByDescending(a => a.EndTime > now) // Active first
+                    .ThenBy(a => a.EndTime)
+                    .ToListAsync();
+
+                var auctionIds = auctions.Select(a => a.AuctionId).ToList();
+
+                // Get bid counts and highest bids
+                var bidStats = await _db.Bids
+                    .Where(b => auctionIds.Contains(b.AuctionId))
+                    .GroupBy(b => b.AuctionId)
+                    .Select(g => new { AuctionId = g.Key, Count = g.Count(), MaxBid = g.Max(b => b.Amount) })
+                    .ToDictionaryAsync(x => x.AuctionId, x => new { x.Count, x.MaxBid });
+
+                // Get auction group info
+                var auctionGroups = await _db.AuctionGroupAuctions
+                    .Include(aga => aga.AuctionGroup)
+                    .Where(aga => auctionIds.Contains(aga.AuctionId))
+                    .ToDictionaryAsync(aga => aga.AuctionId, aga => aga);
+
+                var auctionViewModels = auctions.Select(a => new AdminAuctionViewModel
+                {
+                    AuctionId = a.AuctionId,
+                    AuctionGroupId = auctionGroups.GetValueOrDefault(a.AuctionId)?.AuctionGroupId,
+                    AuctionGroupTitle = auctionGroups.GetValueOrDefault(a.AuctionId)?.AuctionGroup?.Title,
+                    Title = a.Listing?.Title ?? "Unknown",
+                    SellerId = a.Listing?.SellerId ?? 0,
+                    SellerName = a.Listing?.Seller?.FullName ?? "Unknown",
+                    SellerEmail = a.Listing?.Seller?.Email ?? "",
+                    StartTime = a.StartTime,
+                    EndTime = a.EndTime,
+                    StatusId = a.StatusId,
+                    StatusName = a.Status?.Name ?? "Unknown",
+                    StartPrice = a.StartPrice,
+                    CurrentBid = bidStats.GetValueOrDefault(a.AuctionId)?.MaxBid,
+                    BidCount = bidStats.GetValueOrDefault(a.AuctionId)?.Count ?? 0,
+                    HasStarted = a.StartTime <= now,
+                    HasEnded = a.EndTime <= now,
+                    PhotoUrl = a.Listing != null ? GetPhotoUrlsForListing(a.ListingId).FirstOrDefault() : null
+                }).ToList();
+
                 // Gather stats
-                var totalAuctions = await _db.Auctions.AsNoTracking().CountAsync();
-                var activeAuctions = await _db.Auctions.AsNoTracking().CountAsync(a => a.EndTime > now);
+                var totalAuctions = auctions.Count;
+                var activeAuctions = auctions.Count(a => a.EndTime > now && a.StartTime <= now);
                 var totalListings = await _db.Listings.AsNoTracking().CountAsync();
 
                 var viewModel = new AdminDashboardViewModel
@@ -77,7 +144,8 @@ namespace LastCallMotorAuctions.API.Controllers
                     AdminCount = userViewModels.Count(u => u.Roles.Contains("Admin")),
                     TotalAuctions = totalAuctions,
                     ActiveAuctions = activeAuctions,
-                    TotalListings = totalListings
+                    TotalListings = totalListings,
+                    Auctions = auctionViewModels
                 };
 
                 return View(viewModel);
@@ -113,13 +181,18 @@ namespace LastCallMotorAuctions.API.Controllers
                 _logger.LogInformation("Admin granted Seller role to user {UserId} ({Email})", user.Id, user.Email);
                 TempData["Success"] = $"{user.FullName} has been upgraded to Seller.";
 
-                await _notificationService.CreateAsync(user.Id, "SellerRequestApproved", "Seller request approved", "Your request to become a seller has been approved.");
+                await _notificationService.CreateAsync(user.Id, "SellerRequestApproved", "Seller request approved", "Your request to become a seller has been approved. Please log out and log back in to access seller features.");
 
                 // If the admin granted the role to themselves, refresh their sign-in to update claims
                 var currentUser = await _userManager.GetUserAsync(User);
                 if (currentUser != null && currentUser.Id == user.Id)
                 {
                     await _signInManager.RefreshSignInAsync(currentUser);
+                }
+                else
+                {
+                    // Force other users to re-login by updating their security stamp
+                    await _userManager.UpdateSecurityStampAsync(user);
                 }
             }
             else

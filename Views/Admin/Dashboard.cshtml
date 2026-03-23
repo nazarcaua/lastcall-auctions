@@ -4,11 +4,131 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Admin Dashboard";
+    var now = DateTime.UtcNow;
 }
+
+<style>
+    .auction-thumb {
+        width: 60px;
+        height: 45px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    .auction-thumb-placeholder {
+        width: 60px;
+        height: 45px;
+        background: #333;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7em;
+        color: #888;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: bold;
+    }
+    .status-live { background: #4caf50; color: white; }
+    .status-upcoming { background: #2196f3; color: white; }
+    .status-ended { background: #666; color: white; }
+    .status-ending-soon { background: #ff9800; color: white; }
+    .section-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 10px;
+    }
+    .section-tab {
+        padding: 8px 16px;
+        background: #252540;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        border-radius: 4px 4px 0 0;
+    }
+    .section-tab.active {
+        background: #ffd700;
+        color: #1a1a2e;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .bid-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        background: #252540;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+    /* User action buttons */
+    .user-action-btn {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        margin: 2px;
+    }
+    .user-action-btn.grant {
+        background: #2a2a4a;
+        color: #4caf50;
+        border: 1px solid #4caf50;
+    }
+    .user-action-btn.grant:hover {
+        background: #4caf50;
+        color: #fff;
+    }
+    .user-action-btn.revoke {
+        background: #2a2a4a;
+        color: #ff6b6b;
+        border: 1px solid #ff6b6b;
+    }
+    .user-action-btn.revoke:hover {
+        background: #ff6b6b;
+        color: #fff;
+    }
+    .user-action-btn.suspend {
+        background: #2a2a4a;
+        color: #ff9800;
+        border: 1px solid #ff9800;
+    }
+    .user-action-btn.suspend:hover {
+        background: #ff9800;
+        color: #fff;
+    }
+    .user-action-btn.activate {
+        background: #2a2a4a;
+        color: #2196f3;
+        border: 1px solid #2196f3;
+    }
+    .user-action-btn.activate:hover {
+        background: #2196f3;
+        color: #fff;
+    }
+    .user-actions-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+</style>
 
 <div class="dashboard-header">
     <h1>Admin Dashboard</h1>
-    <p class="muted">Manage users, roles, and monitor platform activity.</p>
+    <p class="muted">Manage users, auctions, roles, and monitor platform activity.</p>
 </div>
 
 @if (ViewBag.DbError != null)
@@ -79,24 +199,32 @@
 
 <hr class="divider" />
 
-<div class="section">
-    <div class="section-header">
-        <h2>All Users</h2>
-        <p class="muted">View and manage all registered users.</p>
-    </div>
+<!-- Tab Navigation -->
+<div class="section-tabs">
+    <button class="section-tab active" onclick="showTab('users')">👥 All Users</button>
+    <button class="section-tab" onclick="showTab('auctions')">🚗 All Auctions</button>
+</div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Roles</th>
-                <th>Status</th>
-                <th style="width: 340px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
+<!-- Users Tab -->
+<div id="users-tab" class="tab-content active">
+    <div class="section">
+        <div class="section-header">
+            <h2>All Users</h2>
+            <p class="muted">View and manage all registered users.</p>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Roles</th>
+                    <th>Status</th>
+                    <th style="width: 340px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
             @if (!Model.Users.Any())
             {
                 <tr>
@@ -138,76 +266,178 @@
                             }
                         </td>
                         <td>
-                            @* Seller role toggle *@
-                            @if (!isSeller)
-                            {
-                                <form method="post" asp-action="GrantSeller" asp-controller="Admin" style="display:inline;">
+                            <div class="user-actions-cell">
+                                @* Seller role toggle *@
+                                @if (!isSeller)
+                                {
+                                    <form method="post" asp-action="GrantSeller" asp-controller="Admin" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="user-action-btn grant" title="Grant Seller role">+ Seller</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-action="RevokeSeller" asp-controller="Admin" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="user-action-btn revoke" title="Revoke Seller role">- Seller</button>
+                                    </form>
+                                }
+
+                                @* Admin role toggle *@
+                                @if (!isAdmin)
+                                {
+                                    <form method="post" asp-action="GrantAdmin" asp-controller="Admin" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="user-action-btn grant" title="Grant Admin role">+ Admin</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-action="RevokeAdmin" asp-controller="Admin" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="user-action-btn revoke" title="Revoke Admin role">- Admin</button>
+                                    </form>
+                                }
+
+                                @* Suspend / Activate toggle *@
+                                @if (!isSuspended)
+                                {
+                                    <form method="post" asp-action="SuspendUser" asp-controller="Admin" style="display:inline;" onsubmit="return confirm('Suspend this user? They will be locked out immediately.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="user-action-btn suspend" title="Suspend user">Suspend</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-action="ActivateUser" asp-controller="Admin" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@user.UserId" />
+                                        <button type="submit" class="user-action-btn activate" title="Activate user">Activate</button>
+                                    </form>
+                                }
+
+                                @* Delete *@
+                                <form method="post" asp-action="DeleteUser" asp-controller="Admin" style="display:inline;" onsubmit="return confirm('Permanently delete this user and ALL their data (listings, auctions, bids)? This cannot be undone.');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="userId" value="@user.UserId" />
-                                    <button type="submit" class="link" title="Grant Seller role">+ Seller</button>
+                                    <button type="submit" class="user-action-btn revoke" title="Delete user">🗑 Delete</button>
                                 </form>
-                            }
-                            else
-                            {
-                                <form method="post" asp-action="RevokeSeller" asp-controller="Admin" style="display:inline;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userId" value="@user.UserId" />
-                                    <button type="submit" class="link danger" title="Revoke Seller role">- Seller</button>
-                                </form>
-                            }
-
-                            <span class="sep">|</span>
-
-                            @* Admin role toggle *@
-                            @if (!isAdmin)
-                            {
-                                <form method="post" asp-action="GrantAdmin" asp-controller="Admin" style="display:inline;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userId" value="@user.UserId" />
-                                    <button type="submit" class="link" title="Grant Admin role">+ Admin</button>
-                                </form>
-                            }
-                            else
-                            {
-                                <form method="post" asp-action="RevokeAdmin" asp-controller="Admin" style="display:inline;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userId" value="@user.UserId" />
-                                    <button type="submit" class="link danger" title="Revoke Admin role">- Admin</button>
-                                </form>
-                            }
-
-                            <span class="sep">|</span>
-
-                            @* Suspend / Activate toggle *@
-                            @if (!isSuspended)
-                            {
-                                <form method="post" asp-action="SuspendUser" asp-controller="Admin" style="display:inline;" onsubmit="return confirm('Suspend this user? They will be locked out immediately.');">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userId" value="@user.UserId" />
-                                    <button type="submit" class="link danger" title="Suspend user">Suspend</button>
-                                </form>
-                            }
-                            else
-                            {
-                                <form method="post" asp-action="ActivateUser" asp-controller="Admin" style="display:inline;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userId" value="@user.UserId" />
-                                    <button type="submit" class="link" title="Activate user">Activate</button>
-                                </form>
-                            }
-
-                            <span class="sep">|</span>
-
-                            @* Delete *@
-                            <form method="post" asp-action="DeleteUser" asp-controller="Admin" style="display:inline;" onsubmit="return confirm('Permanently delete this user and ALL their data (listings, auctions, bids)? This cannot be undone.');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="userId" value="@user.UserId" />
-                                <button type="submit" class="delete-btn" title="Delete user">Delete</button>
-                            </form>
+                            </div>
                         </td>
                     </tr>
                 }
             }
         </tbody>
     </table>
+    </div>
 </div>
+
+<!-- Auctions Tab -->
+<div id="auctions-tab" class="tab-content">
+    <div class="section">
+        <div class="section-header">
+            <h2>All Auctions</h2>
+            <p class="muted">View, edit, and delete any auction on the platform.</p>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Seller</th>
+                    <th>Status</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Price</th>
+                    <th>Bids</th>
+                    <th style="width: 200px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Auctions.Any())
+                {
+                    <tr>
+                        <td colspan="10" class="muted">No auctions found.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var auction in Model.Auctions)
+                    {
+                        var hasEnded = auction.HasEnded;
+                        var hasStarted = auction.HasStarted;
+                        var isEndingSoon = !hasEnded && hasStarted && (auction.EndTime - now).TotalHours < 24;
+                        var statusClass = hasEnded ? "status-ended" : isEndingSoon ? "status-ending-soon" : hasStarted ? "status-live" : "status-upcoming";
+                        var statusText = hasEnded ? "Ended" : isEndingSoon ? "Ending Soon" : hasStarted ? "Live" : "Upcoming";
+
+                        <tr>
+                            <td>
+                                @if (auction.PhotoUrl != null)
+                                {
+                                    <img src="@auction.PhotoUrl" alt="@auction.Title" class="auction-thumb" />
+                                }
+                                else
+                                {
+                                    <div class="auction-thumb-placeholder">No img</div>
+                                }
+                            </td>
+                            <td>@auction.AuctionId</td>
+                            <td>
+                                <a href="/Auctions/Detail/@(auction.AuctionGroupId ?? auction.AuctionId)">@auction.Title</a>
+                                @if (auction.AuctionGroupId.HasValue)
+                                {
+                                    <br /><small class="muted">Group: @auction.AuctionGroupTitle</small>
+                                }
+                            </td>
+                            <td>
+                                <strong>@auction.SellerName</strong><br />
+                                <small class="muted">@auction.SellerEmail</small><br />
+                                <small class="muted">ID: @auction.SellerId</small>
+                            </td>
+                            <td><span class="status-badge @statusClass">@statusText</span></td>
+                            <td>@auction.StartTime.ToLocalTime().ToString("MMM d, h:mm tt")</td>
+                            <td>@auction.EndTime.ToLocalTime().ToString("MMM d, h:mm tt")</td>
+                            <td>
+                                @if (auction.CurrentBid.HasValue)
+                                {
+                                    <strong>$@auction.CurrentBid.Value.ToString("N0")</strong>
+                                }
+                                else
+                                {
+                                    <span class="muted">$@auction.StartPrice.ToString("N0")</span>
+                                }
+                            </td>
+                            <td>@auction.BidCount</td>
+                            <td style="white-space: nowrap;">
+                                <a href="/Auctions/Detail/@(auction.AuctionGroupId ?? auction.AuctionId)" class="link" title="View">👁 View</a>
+                                <span class="sep">|</span>
+                                <a href="/Auctions/Edit/@(auction.AuctionGroupId ?? auction.AuctionId)" class="link" title="Edit">✏️ Edit</a>
+                                <span class="sep">|</span>
+                                <a href="/Auctions/Delete/@(auction.AuctionGroupId ?? auction.AuctionId)" class="link danger" title="Delete" onclick="return confirm('Permanently delete this auction? This cannot be undone.');">🗑 Delete</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.section-tab').forEach(btn => btn.classList.remove('active'));
+
+        // Show selected tab
+        document.getElementById(tabName + '-tab').classList.add('active');
+        event.target.classList.add('active');
+    }
+</script>

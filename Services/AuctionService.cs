@@ -140,15 +140,16 @@ namespace LastCallMotorAuctions.API.Services
         {
             var now = DateTime.UtcNow;
 
-            // Get all auctions that are active (status = 2 for Active, or based on time)
+            // Get all auctions that haven't ended yet (includes upcoming/starting soon)
             var auctions = await _context.Auctions
                 .AsNoTracking()
                 .Include(a => a.Listing).ThenInclude(l => l!.Make)
                 .Include(a => a.Listing).ThenInclude(l => l!.Model)
                 .Include(a => a.Listing).ThenInclude(l => l!.Location)
                 .Include(a => a.Status)
-                .Where(a => a.EndTime > now && a.StartTime <= now) // Active based on time
-                .OrderBy(a => a.EndTime)
+                .Where(a => a.EndTime > now) // Include all non-ended auctions (active + upcoming)
+                .OrderBy(a => a.StartTime) // Show upcoming first, then by start time
+                .ThenBy(a => a.EndTime)
                 .ToListAsync();
 
             // Get all auction IDs
@@ -192,7 +193,9 @@ namespace LastCallMotorAuctions.API.Services
                 CurrentBid = highestBids.GetValueOrDefault(a.AuctionId),
                 AuctionGroupId = auctionGroups.GetValueOrDefault(a.AuctionId)?.AuctionGroupId,
                 AuctionGroupTitle = auctionGroups.GetValueOrDefault(a.AuctionId)?.AuctionGroup?.Title,
-                PhotoUrls = GetPhotoUrlsForListing(a.ListingId)
+                PhotoUrls = GetPhotoUrlsForListing(a.ListingId),
+                HasStarted = a.StartTime <= now,
+                HasEnded = a.EndTime <= now
             }).ToList();
         }
 

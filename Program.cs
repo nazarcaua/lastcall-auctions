@@ -66,6 +66,7 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
 })
+.AddRoles<IdentityRole<int>>() // Ensures roles are included in claims
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 

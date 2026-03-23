@@ -38,7 +38,7 @@ namespace LastCallMotorAuctions.API.Controllers
 
         [HttpGet("/Auctions/End/{id:int}")]
         [HttpPost("/Auctions/End/{id:int}")]
-        [Authorize(Roles = "Seller")]
+        [Authorize(Roles = "Seller,Admin")]
         public async Task<IActionResult> End(int id)
         {
             // Get current user id
@@ -46,6 +46,7 @@ namespace LastCallMotorAuctions.API.Controllers
             if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
                 return Forbid();
 
+            var isAdmin = User.IsInRole("Admin");
             var now = DateTime.UtcNow;
 
             // First, try to find an auction group with this ID and end all its auctions
@@ -63,8 +64,8 @@ namespace LastCallMotorAuctions.API.Controllers
                         .Where(a => auctionIds.Contains(a.AuctionId))
                         .ToListAsync();
 
-                    // Verify all auctions belong to this seller
-                    if (auctions.Any(a => a.Listing == null || a.Listing.SellerId != userId))
+                    // Verify all auctions belong to this seller (or user is admin)
+                    if (!isAdmin && auctions.Any(a => a.Listing == null || a.Listing.SellerId != userId))
                         return Forbid();
 
                     foreach (var auction in auctions.Where(a => a.EndTime > now || a.StatusId == 2))
@@ -74,7 +75,7 @@ namespace LastCallMotorAuctions.API.Controllers
                     }
 
                     await _db.SaveChangesAsync();
-                    return RedirectToAction("Dashboard", "Seller");
+                    return isAdmin ? RedirectToAction("Dashboard", "Admin") : RedirectToAction("Dashboard", "Seller");
                 }
             }
             catch
@@ -90,7 +91,8 @@ namespace LastCallMotorAuctions.API.Controllers
             if (singleAuction == null)
                 return NotFound();
 
-            if (singleAuction.Listing == null || singleAuction.Listing.SellerId != userId)
+            // Allow if admin or if user owns the auction
+            if (!isAdmin && (singleAuction.Listing == null || singleAuction.Listing.SellerId != userId))
                 return Forbid();
 
             singleAuction.EndTime = now;
@@ -98,7 +100,7 @@ namespace LastCallMotorAuctions.API.Controllers
 
             await _db.SaveChangesAsync();
 
-            var singleSellerId = singleAuction.Listing.SellerId;
+            var singleSellerId = singleAuction.Listing!.SellerId;
             await _notificationService.CreateAsync(singleSellerId, "AuctionEnded", "Auction ended", "Your auction has ended.", auctionId: singleAuction.AuctionId);
             var singleWinnerId = await _db.Bids
                 .Where(b => b.AuctionId == singleAuction.AuctionId)
@@ -108,16 +110,18 @@ namespace LastCallMotorAuctions.API.Controllers
             if (singleWinnerId != 0)
                 await _notificationService.CreateAsync(singleWinnerId, "AuctionWon", "You won the auction", "You had the highest bid when the auction ended.", auctionId: singleAuction.AuctionId);
 
-            return RedirectToAction("Dashboard", "Seller");
+            return isAdmin ? RedirectToAction("Dashboard", "Admin") : RedirectToAction("Dashboard", "Seller");
         }
 
         [HttpGet("/Auctions/Edit/{id:int}")]
-        [Authorize(Roles = "Seller")]
+        [Authorize(Roles = "Seller,Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
                 return Forbid();
+
+            var isAdmin = User.IsInRole("Admin");
 
             // First check if this is an auction group
             var groupAuctions = await _db.AuctionGroupAuctions
@@ -129,8 +133,8 @@ namespace LastCallMotorAuctions.API.Controllers
 
             if (groupAuctions.Any())
             {
-                // Verify seller owns all auctions in the group
-                if (groupAuctions.Any(aga => aga.Auction?.Listing?.SellerId != userId))
+                // Verify seller owns all auctions in the group (or user is admin)
+                if (!isAdmin && groupAuctions.Any(aga => aga.Auction?.Listing?.SellerId != userId))
                     return Forbid();
 
                 ViewData["IsGroup"] = true;
@@ -146,7 +150,10 @@ namespace LastCallMotorAuctions.API.Controllers
                 .FirstOrDefaultAsync(a => a.AuctionId == id);
 
             if (auction == null) return NotFound();
-            if (auction.Listing == null || auction.Listing.SellerId != userId) return Forbid();
+
+            // Allow if admin or if user owns the auction
+            if (!isAdmin && (auction.Listing == null || auction.Listing.SellerId != userId)) 
+                return Forbid();
 
             ViewData["IsGroup"] = false;
             ViewData["AuctionId"] = id;
@@ -184,6 +191,92 @@ namespace LastCallMotorAuctions.API.Controllers
         {
             ViewData["AuctionId"] = id;
             return View("~/Views/Auctions/Auction.cshtml");
+        }
+
+        [HttpGet("/Auctions/Delete/{id:int}")]
+        [HttpPost("/Auctions/Delete/{id:int}")]
+        [Authorize(Roles = "Seller,Admin")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
+                return Forbid();
+
+            var isAdmin = User.IsInRole("Admin");
+
+            // First, try to find an auction group with this ID and delete all its auctions
+            try
+            {
+                var groupJoins = await _db.AuctionGroupAuctions
+                    .Where(aga => aga.AuctionGroupId == id)
+                    .ToListAsync();
+
+                if (groupJoins.Count > 0)
+                {
+                    var auctionIds = groupJoins.Select(j => j.AuctionId).ToList();
+                    var auctions = await _db.Auctions
+                        .Include(a => a.Listing)
+                        .Where(a => auctionIds.Contains(a.AuctionId))
+                        .ToListAsync();
+
+                    // Verify all auctions belong to this seller (or user is admin)
+                    if (!isAdmin && auctions.Any(a => a.Listing == null || a.Listing.SellerId != userId))
+                        return Forbid();
+
+                    // Delete bids first
+                    var bids = await _db.Bids.Where(b => auctionIds.Contains(b.AuctionId)).ToListAsync();
+                    _db.Bids.RemoveRange(bids);
+
+                    // Delete group joins
+                    _db.AuctionGroupAuctions.RemoveRange(groupJoins);
+
+                    // Delete auctions
+                    _db.Auctions.RemoveRange(auctions);
+
+                    // Delete the group itself
+                    var group = await _db.AuctionGroups.FindAsync(id);
+                    if (group != null)
+                        _db.AuctionGroups.Remove(group);
+
+                    // Delete listings
+                    var listings = auctions.Where(a => a.Listing != null).Select(a => a.Listing!).ToList();
+                    _db.Listings.RemoveRange(listings);
+
+                    await _db.SaveChangesAsync();
+                    return isAdmin ? RedirectToAction("Dashboard", "Admin") : RedirectToAction("Dashboard", "Seller");
+                }
+            }
+            catch
+            {
+                // AuctionGroup tables may not exist; fall through to single-auction lookup
+            }
+
+            // Fall back to deleting a single auction by its AuctionId
+            var singleAuction = await _db.Auctions
+                .Include(a => a.Listing)
+                .FirstOrDefaultAsync(a => a.AuctionId == id);
+
+            if (singleAuction == null)
+                return NotFound();
+
+            // Allow if admin or if user owns the auction
+            if (!isAdmin && (singleAuction.Listing == null || singleAuction.Listing.SellerId != userId))
+                return Forbid();
+
+            // Delete bids first
+            var singleBids = await _db.Bids.Where(b => b.AuctionId == id).ToListAsync();
+            _db.Bids.RemoveRange(singleBids);
+
+            // Delete auction
+            _db.Auctions.Remove(singleAuction);
+
+            // Delete listing
+            if (singleAuction.Listing != null)
+                _db.Listings.Remove(singleAuction.Listing);
+
+            await _db.SaveChangesAsync();
+
+            return isAdmin ? RedirectToAction("Dashboard", "Admin") : RedirectToAction("Dashboard", "Seller");
         }
 
         private async Task SetWatchlistViewBag()
