@@ -166,7 +166,15 @@ public class ListingsController : Controller
         if (existingCount + photos.Count > MaxPhotosPerListing)
             return BadRequest(new { message = $"Maximum {MaxPhotosPerListing} photos per listing. Currently {existingCount} uploaded." });
 
-        Directory.CreateDirectory(uploadDir);
+        try
+        {
+            Directory.CreateDirectory(uploadDir);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create upload directory for listing {ListingId}", id);
+            return StatusCode(500, new { message = "Failed to prepare upload directory." });
+        }
 
         var uploaded = new List<string>();
 
@@ -183,9 +191,17 @@ public class ListingsController : Controller
             var fileName = $"{Guid.NewGuid():N}{ext}";
             var filePath = Path.Combine(uploadDir, fileName);
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            try
             {
-                await photo.CopyToAsync(stream);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await photo.CopyToAsync(stream);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save photo '{FileName}' for listing {ListingId}", photo.FileName, id);
+                return StatusCode(500, new { message = $"Failed to save file '{photo.FileName}'. Please try again." });
             }
 
             uploaded.Add($"/uploads/listings/{id}/{fileName}");

@@ -18,25 +18,29 @@ namespace LastCallMotorAuctions.API.DTOs
         [Required]
         public int ModelId { get; set; }
 
+        [StringLength(17, MinimumLength = 17)]
         public string? Vin { get; set; }
+        [Range(0, 9_999_999)]
         public int? Mileage { get; set; }
         [Required]
         [Range(1, 5)]
         public byte ConditionGrade { get; set; }
 
+        [MaxLength(2000)]
         public string? Description { get; set; }
 
         [Required]
-        [Range(0, double.MaxValue)]
+        [Range(0.01, (double)decimal.MaxValue)]
         public decimal StartPrice { get; set; }
 
-        [Range(0, double.MaxValue)]
+        [Range(0.01, (double)decimal.MaxValue)]
         public decimal? ReservePrice { get; set; }
     }
 
     public class CreateListingDto
     {
         // Optional group title - if provided, multiple vehicles will be part of the same auction group
+        [StringLength(200)]
         public string? AuctionGroupTitle { get; set; }
 
         [Required]

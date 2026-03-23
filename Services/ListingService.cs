@@ -152,7 +152,12 @@ namespace LastCallMotorAuctions.API.Services
             {
                 foreach (var vehicle in dto.Vehicles)
                 {
-                    // Validate model
+                    if (vehicle.ReservePrice.HasValue && vehicle.ReservePrice.Value < vehicle.StartPrice)
+                        throw new ArgumentException("Reserve price must be greater than or equal to the start price.");
+
+                    var makeExists = await _context.VehicleMakes.AnyAsync(m => m.MakeId == vehicle.MakeId);
+                    if (!makeExists) throw new ArgumentException("Invalid MakeId.");
+
                     var model = await _context.VehicleModels.FindAsync(vehicle.ModelId);
                     if (model == null) throw new ArgumentException("Invalid ModelId.");
                     if (model.MakeId != vehicle.MakeId) throw new ArgumentException("Model does not belong to the selected Make.");
