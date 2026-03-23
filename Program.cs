@@ -8,6 +8,7 @@ using LastCallMotorAuctions.API.Hubs;
 using LastCallMotorAuctions.API.Services;
 using Microsoft.AspNetCore.Identity;
 using LastCallMotorAuctions.API.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -190,6 +191,11 @@ if (app.Environment.IsDevelopment())
 }
 
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 app.UseHttpsRedirection();
 
 // =======================
@@ -251,16 +257,26 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    await NhtsaVehicleDataSeeder.SeedFromNhtsaAsync(context, logger);
 
-    // Fallback seeder in case NHTSA API failed to populate year-make relationships
-    await VehicleDataFallbackSeeder.SeedAsync(context, logger);
+    try
+    {
+        await NhtsaVehicleDataSeeder.SeedFromNhtsaAsync(context, logger);
+        await VehicleDataFallbackSeeder.SeedAsync(context, logger);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Vehicle data seeding failed — app will continue without seeded vehicle data.");
+    }
 
-    // Seed identity roles
-    await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
-
-    // Seed default admin account
-    await AdminSeeder.SeedAdminAsync(scope.ServiceProvider);
+    try
+    {
+        await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
+        await AdminSeeder.SeedAdminAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Role/Admin seeding failed.");
+    }
 }
 
 app.Run();

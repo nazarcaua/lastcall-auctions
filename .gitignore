@@ -29,6 +29,9 @@ obj/
 ## Environment variables
 .env
 
+## Production secrets — never commit real credentials
+appsettings.Production.json
+
 ## NuGet packages
 *.nupkg
 packages/
