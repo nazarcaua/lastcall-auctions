@@ -38,5 +38,10 @@ namespace LastCallMotorAuctions.API.DTOs
         public string? Region { get; set; }
         public string? Country { get; set; }
         public string? PostalCode { get; set; }
+
+        // Computed status for display
+        public bool HasStarted { get; set; }
+        public bool HasEnded { get; set; }
+        public bool IsStartingSoon => !HasStarted && !HasEnded;
     }
 }

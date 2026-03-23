@@ -178,7 +178,7 @@ namespace LastCallMotorAuctions.API.Services
                         Mileage = vehicle.Mileage,
                         ConditionGrade = vehicle.ConditionGrade,
                         LocationId = defaultLocation.LocationId,
-                        StatusId = 1
+                        StatusId = 2 // Auto-approved (Active)
                     };
 
                     _context.Listings.Add(listing);
