@@ -40,6 +40,7 @@ namespace LastCallMotorAuctions.API.Controllers
 
         /// Debug: return recent raw auctions (includes StatusId, StartTime, EndTime)
         [HttpGet("debug/recent")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetRecentAuctionsDebug()
         {
             var recent = await _db.Auctions
@@ -89,6 +90,9 @@ namespace LastCallMotorAuctions.API.Controllers
                 if (auction == null)
                     return NotFound(new { message = "Auction not found." });
 
+                if (auction.Listing != null && auction.Listing.SellerId == userId)
+                    return BadRequest(new { message = "You cannot bid on your own auction." });
+
                 if (auction.Listing == null || auction.Listing.SellerId != userId)
                     return Forbid();
 
@@ -97,6 +101,8 @@ namespace LastCallMotorAuctions.API.Controllers
                 {
                     var endUtc = dto.EndTime.Value.ToUniversalTime();
                     var now = DateTime.UtcNow;
+                    if (auction.EndTime <= now)
+                        return BadRequest(new { message = "This auction has ended and can’t be updated." });
                     if (endUtc <= now.AddMinutes(1))
                         return BadRequest(new { message = "Auction end time must be at least 1 minute in the future." });
                     auction.EndTime = endUtc;

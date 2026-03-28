@@ -100,7 +100,7 @@
         <tbody>
             @{
                 var activeGroups = (Model.AuctionGroups ?? new List<AuctionGroupViewModel>())
-                    .Where(g => g.Auctions.Any(a => a.EndTime > now))
+                    .Where(g => g.Auctions.Any(a => a.StartTime <= now && a.EndTime > now))
                     .OrderBy(g => g.Auctions.Min(a => a.EndTime))
                     .ToList();
 

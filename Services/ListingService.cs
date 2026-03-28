@@ -247,6 +247,7 @@ namespace LastCallMotorAuctions.API.Services
 
         public async Task<ListingResponseDto?> UpdateListingAsync(int lisitngId, UpdateListingDto dto, int userId)
         {
+
             var listing = await _context.Listings
                 .Include(l => l.Location)
                 .FirstOrDefaultAsync(l => l.ListingId == lisitngId);
@@ -256,6 +257,13 @@ namespace LastCallMotorAuctions.API.Services
 
             if (listing.SellerId != userId)
                 throw new UnauthorizedAccessException("You can only update your own listings.");
+
+            var now = DateTime.UtcNow;
+            var hasEndedAuction = await _context.Auctions
+                .AnyAsync(a => a.ListingId == listing.ListingId && a.EndTime <= now);
+
+            if (hasEndedAuction)
+                throw new ArgumentException("This listing can’t be edited because its auction has ended.");
 
             // Validate Make/Model if both are provided
             if (dto.MakeId.HasValue && dto.ModelId.HasValue)
