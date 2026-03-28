@@ -53,7 +53,15 @@ public class ListingsController : Controller
             _logger.LogError(ex, "Error creating listing");
 
             // Always return detailed exception info
-            return StatusCode(500, new { message = "An error occurred while creating the listing.", exception = ex.GetType().FullName, details = ex.ToString() });
+            if (_env.IsDevelopment())
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while creating the listing.",
+                    exception = ex.GetType().FullName,
+                    details = ex.ToString()
+                });
+            return StatusCode(500, new { message = "An error occurred while creating the listing." });
+
         }
     }
 
@@ -100,7 +108,14 @@ public class ListingsController : Controller
         {
             _logger.LogError(ex, "Error updating listing {ListingId}", id);
             // Always include exception details in responses
-            return StatusCode(500, new { message = "An error occurred while updating the listing.", exception = ex.GetType().FullName, details = ex.ToString() });
+            if (_env.IsDevelopment())
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while updating the listing.",
+                    exception = ex.GetType().FullName,
+                    details = ex.ToString()
+                });
+            return StatusCode(500, new { message = "An error occurred while updating the listing." });
         }
     }
 

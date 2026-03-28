@@ -68,6 +68,14 @@ namespace LastCallMotorAuctions.API.Controllers
                     if (!isAdmin && auctions.Any(a => a.Listing == null || a.Listing.SellerId != userId))
                         return Forbid();
 
+                    if (auctions.Any(a => a.StartTime > now))
+                    {
+                        TempData["Error"] = "One or more auctions in this group haven’t started yet, so the group can’t be ended.";
+                        return isAdmin
+                            ? RedirectToAction("Dashboard", "Admin")
+                            : RedirectToAction("Dashboard", "Seller");
+                    }
+
                     foreach (var auction in auctions.Where(a => a.EndTime > now || a.StatusId == 2))
                     {
                         auction.EndTime = now;
@@ -95,20 +103,34 @@ namespace LastCallMotorAuctions.API.Controllers
             if (!isAdmin && (singleAuction.Listing == null || singleAuction.Listing.SellerId != userId))
                 return Forbid();
 
+            if (singleAuction.StartTime > now)
+            {
+                TempData["Error"] = "This auction hasn’t started yet, so it can’t be ended.";
+                return isAdmin
+                    ? RedirectToAction("Dashboard", "Admin")
+                    : RedirectToAction("Dashboard", "Seller");
+            }
+
             singleAuction.EndTime = now;
             singleAuction.StatusId = 3; // Ended
 
             await _db.SaveChangesAsync();
 
-            var singleSellerId = singleAuction.Listing!.SellerId;
-            await _notificationService.CreateAsync(singleSellerId, "AuctionEnded", "Auction ended", "Your auction has ended.", auctionId: singleAuction.AuctionId);
-            var singleWinnerId = await _db.Bids
-                .Where(b => b.AuctionId == singleAuction.AuctionId)
-                .OrderByDescending(b => b.Amount)
-                .Select(b => b.BidderId)
-                .FirstOrDefaultAsync();
-            if (singleWinnerId != 0)
-                await _notificationService.CreateAsync(singleWinnerId, "AuctionWon", "You won the auction", "You had the highest bid when the auction ended.", auctionId: singleAuction.AuctionId);
+            if (singleAuction.Listing != null)
+            {
+                var singleSellerId = singleAuction.Listing.SellerId;
+                await _notificationService.CreateAsync(singleSellerId, "AuctionEnded", "Auction ended",
+                    "Your auction has ended.", auctionId: singleAuction.AuctionId);
+
+                var singleWinnerId = await _db.Bids
+                    .Where(b => b.AuctionId == singleAuction.AuctionId)
+                    .OrderByDescending(b => b.Amount)
+                    .Select(b => b.BidderId)
+                    .FirstOrDefaultAsync();
+                if (singleWinnerId != 0)
+                    await _notificationService.CreateAsync(singleWinnerId, "AuctionWon", "You won the auction",
+                        "You had the highest bid when the auction ended.", auctionId: singleAuction.AuctionId);
+            }
 
             return isAdmin ? RedirectToAction("Dashboard", "Admin") : RedirectToAction("Dashboard", "Seller");
         }
@@ -122,6 +144,7 @@ namespace LastCallMotorAuctions.API.Controllers
                 return Forbid();
 
             var isAdmin = User.IsInRole("Admin");
+            var now = DateTime.UtcNow;
 
             // First check if this is an auction group
             var groupAuctions = await _db.AuctionGroupAuctions
@@ -136,6 +159,15 @@ namespace LastCallMotorAuctions.API.Controllers
                 // Verify seller owns all auctions in the group (or user is admin)
                 if (!isAdmin && groupAuctions.Any(aga => aga.Auction?.Listing?.SellerId != userId))
                     return Forbid();
+
+                var allEnded = groupAuctions.All(aga => aga.Auction != null && aga.Auction.EndTime <= now);
+                if (allEnded)
+                {
+                    TempData["Error"] = "This auction has ended and can’t be edited.";
+                    return isAdmin
+                        ? RedirectToAction("Dashboard", "Admin")
+                        : RedirectToAction("Dashboard", "Seller");
+                }
 
                 ViewData["IsGroup"] = true;
                 ViewData["GroupId"] = id;
@@ -154,6 +186,14 @@ namespace LastCallMotorAuctions.API.Controllers
             // Allow if admin or if user owns the auction
             if (!isAdmin && (auction.Listing == null || auction.Listing.SellerId != userId)) 
                 return Forbid();
+
+            if (auction.EndTime <= now)
+            {
+                TempData["Error"] = "This auction has ended and can’t be edited.";
+                return isAdmin
+                    ? RedirectToAction("Dashboard", "Admin")
+                    : RedirectToAction("Dashboard", "Seller");
+            }
 
             ViewData["IsGroup"] = false;
             ViewData["AuctionId"] = id;
