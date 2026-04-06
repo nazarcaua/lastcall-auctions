@@ -34,8 +34,9 @@
         @foreach (var a in Model.Auctions)
         {
             var timeLeft = a.EndTime - now;
+            var hasStarted = a.StartTime <= now;
             var hasEnded = timeLeft.TotalSeconds <= 0;
-            var isEndingSoon = timeLeft.TotalHours < 24 && !hasEnded;
+            var isEndingSoon = hasStarted && timeLeft.TotalHours < 24 && !hasEnded;
             var isWatched = watchlistIds.Contains(a.AuctionId);
             var photoCount = a.PhotoUrls?.Count ?? 0;
             var currentBid = a.CurrentBid ?? a.StartPrice;
@@ -75,8 +76,8 @@
                         <div class="no-photos">No photos available</div>
                     }
 
-                    <div class="vehicle-status-badge @(hasEnded ? "ended" : isEndingSoon ? "ending-soon" : "active")">
-                        @(hasEnded ? "Ended" : isEndingSoon ? "Ending Soon" : "Active")
+                    <div class="vehicle-status-badge @(hasEnded ? "ended" : isEndingSoon ? "ending-soon" : hasStarted ? "active" : "upcoming")">
+                        @(hasEnded ? "Ended" : isEndingSoon ? "Ending Soon" : hasStarted ? "Active" : "Upcoming")
                     </div>
                 </div>
 

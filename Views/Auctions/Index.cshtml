@@ -34,7 +34,7 @@
                 var timeRemaining = endDate - DateTime.UtcNow;
                 var hasStarted = startDate <= DateTime.UtcNow;
                 var hasEnded = timeRemaining.TotalSeconds <= 0;
-                var isEndingSoon = timeRemaining.TotalHours < 24 && timeRemaining.TotalSeconds > 0;
+                var isEndingSoon = hasStarted && timeRemaining.TotalHours < 24 && timeRemaining.TotalSeconds > 0;
 
                 <article class="auction-event-card">
                     <!-- Photo Section -->

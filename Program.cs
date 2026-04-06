@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using LastCallMotorAuctions.API.Middleware;
 using LastCallMotorAuctions.API.Hubs;
 using LastCallMotorAuctions.API.Services;
@@ -21,7 +23,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // =======================
 // MVC + Views (REQUIRED)
 // =======================
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+    });
 
 // =======================
 // OpenAPI / Swagger

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using LastCallMotorAuctions.API.Services;
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Data;
@@ -90,17 +90,26 @@ namespace LastCallMotorAuctions.API.Controllers
                 if (auction == null)
                     return NotFound(new { message = "Auction not found." });
 
-                if (auction.Listing != null && auction.Listing.SellerId == userId)
-                    return BadRequest(new { message = "You cannot bid on your own auction." });
-
                 if (auction.Listing == null || auction.Listing.SellerId != userId)
                     return Forbid();
 
-                // Validate EndTime if provided
+                var now = DateTime.UtcNow;
+
+                // Update StartTime if provided
+                if (dto.StartTime.HasValue)
+                {
+                    var startUtc = dto.StartTime.Value.Kind == DateTimeKind.Utc
+                        ? dto.StartTime.Value
+                        : dto.StartTime.Value.ToUniversalTime();
+                    auction.StartTime = startUtc;
+                }
+
+                // Validate and update EndTime if provided
                 if (dto.EndTime.HasValue)
                 {
-                    var endUtc = dto.EndTime.Value.ToUniversalTime();
-                    var now = DateTime.UtcNow;
+                    var endUtc = dto.EndTime.Value.Kind == DateTimeKind.Utc
+                        ? dto.EndTime.Value
+                        : dto.EndTime.Value.ToUniversalTime();
                     if (auction.EndTime <= now)
                         return BadRequest(new { message = "This auction has ended and can’t be updated." });
                     if (endUtc <= now.AddMinutes(1))

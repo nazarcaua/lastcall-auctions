@@ -68,14 +68,6 @@ namespace LastCallMotorAuctions.API.Controllers
                     if (!isAdmin && auctions.Any(a => a.Listing == null || a.Listing.SellerId != userId))
                         return Forbid();
 
-                    if (auctions.Any(a => a.StartTime > now))
-                    {
-                        TempData["Error"] = "One or more auctions in this group haven’t started yet, so the group can’t be ended.";
-                        return isAdmin
-                            ? RedirectToAction("Dashboard", "Admin")
-                            : RedirectToAction("Dashboard", "Seller");
-                    }
-
                     foreach (var auction in auctions.Where(a => a.EndTime > now || a.StatusId == 2))
                     {
                         auction.EndTime = now;
@@ -102,14 +94,6 @@ namespace LastCallMotorAuctions.API.Controllers
             // Allow if admin or if user owns the auction
             if (!isAdmin && (singleAuction.Listing == null || singleAuction.Listing.SellerId != userId))
                 return Forbid();
-
-            if (singleAuction.StartTime > now)
-            {
-                TempData["Error"] = "This auction hasn’t started yet, so it can’t be ended.";
-                return isAdmin
-                    ? RedirectToAction("Dashboard", "Admin")
-                    : RedirectToAction("Dashboard", "Seller");
-            }
 
             singleAuction.EndTime = now;
             singleAuction.StatusId = 3; // Ended
@@ -163,7 +147,7 @@ namespace LastCallMotorAuctions.API.Controllers
                 var allEnded = groupAuctions.All(aga => aga.Auction != null && aga.Auction.EndTime <= now);
                 if (allEnded)
                 {
-                    TempData["Error"] = "This auction has ended and can’t be edited.";
+                    TempData["Error"] = "This auction has ended and canï¿½t be edited.";
                     return isAdmin
                         ? RedirectToAction("Dashboard", "Admin")
                         : RedirectToAction("Dashboard", "Seller");
@@ -189,7 +173,7 @@ namespace LastCallMotorAuctions.API.Controllers
 
             if (auction.EndTime <= now)
             {
-                TempData["Error"] = "This auction has ended and can’t be edited.";
+                TempData["Error"] = "This auction has ended and canï¿½t be edited.";
                 return isAdmin
                     ? RedirectToAction("Dashboard", "Admin")
                     : RedirectToAction("Dashboard", "Seller");

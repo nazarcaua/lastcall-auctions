@@ -4,6 +4,7 @@ namespace LastCallMotorAuctions.API.DTOs
     {
         public decimal? StartPrice { get; set; }
         public decimal? ReservePrice { get; set; }
+        public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
     }
 }
