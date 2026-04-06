@@ -1,4 +1,4 @@
-﻿namespace LastCallMotorAuctions.API.Models
+namespace LastCallMotorAuctions.API.Models
 {
     public abstract class Entity
     {

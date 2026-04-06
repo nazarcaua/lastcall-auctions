@@ -2,7 +2,6 @@
 using LastCallMotorAuctions.API.DTOs;
 using LastCallMotorAuctions.API.Hubs;
 using LastCallMotorAuctions.API.Models;
-using LastCallMotorAuctions.API.ViewModels;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -45,38 +44,6 @@ namespace LastCallMotorAuctions.API.Services
                 .OrderBy(f => f)
                 .Select(f => $"/uploads/listings/{listingId}/{Path.GetFileName(f)}")
                 .ToList();
-        }
-
-        public async Task<BuyerDashboardViewModel> GetBuyerDashboardAsync(int buyerId)
-        {
-            var buyer = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == buyerId);
-            var buyerName = buyer?.FullName ?? "";
-
-            var bids = await _context.Bids
-                .AsNoTracking()
-                .Where(b => b.BidderId == buyerId)
-                .Include(b => b.Auction)
-                .ToListAsync();
-
-            var auctionIds = bids.Select(b => b.AuctionId).Distinct().ToList();
-            var auctions = new List<AuctionBrowseDto>();
-
-            foreach (var aid in auctionIds)
-            {
-                var auctionDto = await GetAuctionByIdAsync(aid);
-                if (auctionDto != null) auctions.Add(auctionDto);
-            }
-
-            return new BuyerDashboardViewModel
-            {
-                BuyerId = buyerId,
-                BuyerName = buyerName,
-                BidList = bids,
-                AuctionList = auctions,
-                Favourites = new List<Favourite>(),
-                Transactions = new List<Transaction>(),
-                SellerRatings = new List<SellerRatingDto>()
-            };
         }
 
         public Task<AuctionResponseDto> CreateAuctionAsync(CreateAuctionDto createAuctionDto, int sellerId)

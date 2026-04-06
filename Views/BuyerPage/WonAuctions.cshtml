@@ -1,0 +1,83 @@
+@using LastCallMotorAuctions.API.ViewModels
+@model BuyerDashboardViewModel
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Won Auctions";
+}
+
+<div class="dashboard-header">
+    <h1>Won Auctions</h1>
+    <p class="muted">Auctions you have won.</p>
+</div>
+
+<div class="buyer-dashboard">
+
+    <aside class="buyer-sidebar">
+        <div class="buyer-sidebar-title">Navigation</div>
+        <nav class="buyer-sidebar-nav">
+            <a href="/Buyer/Dashboard">Dashboard</a>
+            <a href="/Buyer/Watchlist">Watchlist</a>
+            <a href="/Buyer/WonAuctions" class="active">Won Auctions</a>
+            <span class="disabled">Payments / Pre-Auth</span>
+        </nav>
+    </aside>
+
+    <div class="buyer-content">
+
+        <div class="section">
+            <div class="section-header">
+                <h2>My Won Auctions</h2>
+                <p class="muted">@Model.WonAuctions.Count auction@(Model.WonAuctions.Count == 1 ? "" : "s") won.</p>
+            </div>
+
+            @if (!Model.WonAuctions.Any())
+            {
+                <div class="buyer-empty-state">
+                    You haven't won any auctions yet.
+                    <br /><br /><a class="link" href="/Auctions">Browse live auctions</a> and place bids to win!
+                </div>
+            }
+            else
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Vehicle</th>
+                            <th>Winning Bid</th>
+                            <th>Ended</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var won in Model.WonAuctions)
+                        {
+                            <tr>
+                                <td>
+                                    @if (won.FirstPhotoUrl != null)
+                                    {
+                                        <img src="@won.FirstPhotoUrl" alt="@won.VehicleTitle"
+                                             style="width:60px;height:45px;object-fit:cover;border-radius:4px;" />
+                                    }
+                                    else
+                                    {
+                                        <div style="width:60px;height:45px;background:#333;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.7em;color:#888;">No img</div>
+                                    }
+                                </td>
+                                <td>
+                                    <strong>@won.VehicleTitle</strong>
+                                    <br /><small class="muted">Auction #@won.AuctionId</small>
+                                </td>
+                                <td><strong class="winning">$@won.WinningBid.ToString("N2")</strong></td>
+                                <td>@won.EndTime.ToLocalTime().ToString("MMM d, yyyy")</td>
+                                <td><a class="link" href="/Auctions/Detail/@won.AuctionId">View</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+    </div>
+</div>

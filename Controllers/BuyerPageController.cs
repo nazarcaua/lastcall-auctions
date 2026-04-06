@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace LastCallMotorAuctions.API.Controllers
 {
@@ -14,11 +15,31 @@ namespace LastCallMotorAuctions.API.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<User> _userManager;
+        private readonly IWebHostEnvironment _env;
 
-        public BuyerPageController(ApplicationDbContext db, UserManager<User> userManager)
+        private static readonly HashSet<string> AllowedPhotoExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".webp"
+        };
+
+        public BuyerPageController(ApplicationDbContext db, UserManager<User> userManager, IWebHostEnvironment env)
         {
             _db = db;
             _userManager = userManager;
+            _env = env;
+        }
+
+        private string? GetFirstPhotoUrl(int listingId)
+        {
+            var uploadDir = Path.Combine(_env.WebRootPath ?? "", "uploads", "listings", listingId.ToString());
+            if (!Directory.Exists(uploadDir)) return null;
+
+            var file = Directory.GetFiles(uploadDir)
+                .Where(f => AllowedPhotoExtensions.Contains(Path.GetExtension(f)))
+                .OrderBy(f => f)
+                .FirstOrDefault();
+
+            return file == null ? null : $"/uploads/listings/{listingId}/{Path.GetFileName(file)}";
         }
 
         [HttpGet("Dashboard")]
@@ -120,9 +141,99 @@ namespace LastCallMotorAuctions.API.Controllers
                 BuyerId = buyerId,
                 BuyerName = user.FullName,
                 BidList = bids,
-                Favourites = watchlistItems,
-                Transactions = new List<Transaction>(),
-                SellerRatings = new List<SellerRatingDto>()
+                Favourites = watchlistItems
+            };
+
+            return View(vm);
+        }
+
+        [HttpGet("WonAuctions")]
+        public async Task<IActionResult> WonAuctions()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return RedirectToAction("Login", "Auth");
+
+            var buyerId = user.Id;
+            var now = DateTime.UtcNow;
+
+            var bids = await _db.Bids
+                .AsNoTracking()
+                .Where(b => b.BidderId == buyerId)
+                .Include(b => b.Auction)
+                    .ThenInclude(a => a!.Listing)
+                        .ThenInclude(l => l!.Make)
+                .Include(b => b.Auction)
+                    .ThenInclude(a => a!.Listing)
+                        .ThenInclude(l => l!.Model)
+                .ToListAsync();
+
+            var endedAuctionIds = bids
+                .Where(b => b.Auction != null && b.Auction.EndTime <= now)
+                .Select(b => b.AuctionId)
+                .Distinct()
+                .ToList();
+
+            // For each ended auction get the top bid amount and the winner's bidder ID
+            Dictionary<int, (decimal MaxBid, int WinnerId)> highestBids;
+            if (endedAuctionIds.Count > 0)
+            {
+                highestBids = await _db.Bids
+                    .AsNoTracking()
+                    .Where(b => endedAuctionIds.Contains(b.AuctionId))
+                    .GroupBy(b => b.AuctionId)
+                    .Select(g => new
+                    {
+                        AuctionId = g.Key,
+                        MaxBid = g.Max(b => b.Amount),
+                        WinnerId = g.OrderByDescending(b => b.Amount).Select(b => b.BidderId).First()
+                    })
+                    .ToDictionaryAsync(x => x.AuctionId, x => (x.MaxBid, x.WinnerId));
+            }
+            else
+            {
+                highestBids = new Dictionary<int, (decimal, int)>();
+            }
+
+            var myHighestBids = bids
+                .Where(b => endedAuctionIds.Contains(b.AuctionId))
+                .GroupBy(b => b.AuctionId)
+                .ToDictionary(g => g.Key, g => g.Max(b => b.Amount));
+
+            var wonAuctions = endedAuctionIds
+                .Where(aid =>
+                {
+                    if (!highestBids.TryGetValue(aid, out var top)) return false;
+                    var myMax = myHighestBids.GetValueOrDefault(aid);
+                    return myMax > 0 && top.WinnerId == buyerId && myMax == top.MaxBid;
+                })
+                .Select(aid =>
+                {
+                    var bid = bids.First(b => b.AuctionId == aid);
+                    var auction = bid.Auction!;
+                    var listing = auction.Listing;
+                    var title = listing != null
+                        ? $"{listing.Year} {listing.Make?.Name ?? ""} {listing.Model?.Name ?? ""}".Trim()
+                        : $"Auction #{aid}";
+                    var winningAmount = myHighestBids[aid];
+                    return new WonAuctionViewModel
+                    {
+                        AuctionId = aid,
+                        VehicleTitle = title,
+                        WinningBid = winningAmount,
+                        EndTime = auction.EndTime,
+                        FirstPhotoUrl = listing != null ? GetFirstPhotoUrl(listing.ListingId) : null
+                    };
+                })
+                .OrderByDescending(w => w.EndTime)
+                .ToList();
+
+            ViewBag.WonCount = wonAuctions.Count;
+
+            var vm = new BuyerDashboardViewModel
+            {
+                BuyerId = buyerId,
+                BuyerName = user.FullName,
+                WonAuctions = wonAuctions
             };
 
             return View(vm);
